@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Element View Controller Demonstration</title>
+<link rel="stylesheet" type="text/css" href="basic.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="evc.js"></script>
+</head>
+<body>
+
+<h2>Table</h2>
+<table id="demotable" class="sortable sort-animated filtered paged" style="display:inline-block;">
+	<caption>
+		<span class="pageup" style="float:left;">&larr; Previous</span>
+		<span class="pagedown" style="float:right;">Next &rarr;</span>
+		<span class="page"></span>
+		<span><input class="perpage" type="number" min="1" max="1000" value="4" width="50"/> per page</span>
+		<input class="filter" type="text" placeholder="Search..."/>
+		<span class="filter-list"></span>
+	</caption>
+	<thead>
+		<tr class="sorter">
+			<th class="sort filterable" data-column="text" data-type="text">Text Column</th>
+			<th class="sort filterable" data-column="number" data-type="number">Numeric Column</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Charlie</td>
+			<td>200</td>
+		</tr>
+		<tr>
+			<td>Alpha</td>
+			<td>30000</td>
+		</tr>
+		<tr>
+			<td>Delta</td>
+			<td>1000</td>
+		</tr>
+		<tr>
+			<td>Bravo</td>
+			<td>4</td>
+		</tr>
+	</tbody>
+</table>
+<table style="display:inline-block;">
+	<caption>
+		Column-Specific Filters
+		<!--<span class="filter-list"></span>-->
+	</caption>
+	<tr>
+		<th>Text Column</th>
+		<td><input class="filter" data-table="#demotable" data-column="text" type="text" placeholder="Search..."/></td>
+	</tr>
+	<tr>
+		<th>Numeric Column</th>
+		<td><input class="filter" data-table="#demotable" data-column="number" type="number" placeholder="Search..."/></td>
+	</tr>
+</table>
+
+</body>
+</html>

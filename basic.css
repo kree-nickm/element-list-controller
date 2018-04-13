@@ -1,0 +1,38 @@
+.sortable .sort {
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-ms-user-select: none;
+}
+
+.sortable .sortup:after {
+	content: "\2191";
+}
+
+.sortable .sortdown:after {
+	content: "\2193";
+}
+
+.filtered .filtered-out {
+	display: none;
+}
+
+.paged .paged-out {
+	display: none;
+}
+
+.paged .pageup,
+.paged .pagedown {
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-ms-user-select: none;
+	opacity: 0.5;
+}
+
+.paged .pageup.active,
+.paged .pagedown.active {
+	opacity: 1;
+}
