@@ -1,5 +1,6 @@
 .sortable .sort {
 	cursor: pointer;
+	user-select: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-khtml-user-select: none;
@@ -18,6 +19,23 @@
 	display: none;
 }
 
+.filter-list * {
+	border-radius: 0.4em;
+	font-size: 0.9em;
+	margin: 0px 1px;
+	padding: 3px;
+	cursor: pointer;
+}
+.filter-list .filter-and {
+	background-color: rgba(150,150,255,0.8);
+}
+.filter-list .filter-or {
+	background-color: rgba(150,255,150,0.8);
+}
+.filter-list .filter-not {
+	background-color: rgba(255,150,150,0.8);
+}
+
 .paged .paged-out {
 	display: none;
 }
@@ -25,6 +43,7 @@
 .paged .pageup,
 .paged .pagedown {
 	cursor: pointer;
+	user-select: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-khtml-user-select: none;
