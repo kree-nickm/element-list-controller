@@ -7,11 +7,11 @@ Currently only applies to HTML elements that are present on the page at the time
 Include the following into your HTML document:
 ```html
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://kree-nickm.github.io/element-view-controller/evc.js"></script>
+<script src="https://kree-nickm.github.io/element-list-controller/evc.js"></script>
 ```
 This will include both jQuery and the development version of this script. To load a specific release (recommended in case future versions alter or remove funtionality), use the URL for that release instead.
 
-For examples, check out [the demo page](https://kree-nickm.github.io/element-view-controller/index.html) as well as some [basic CSS](https://kree-nickm.github.io/element-view-controller/basic.css) to make the page a little more user-friendly.
+For examples, check out [the demo page](https://kree-nickm.github.io/element-list-controller/index.html) as well as some [basic CSS](https://kree-nickm.github.io/element-list-controller/basic.css) to make the page a little more user-friendly.
 
 ### Sorting
 Add the `sortable` class to a `<table>` element (referred to as the list container). You can add the `sort-animated` class in addition to animate the sorting, though this is experimental and will likely look awkward with paginated or filtered list containers. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted.
