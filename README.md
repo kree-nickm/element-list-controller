@@ -7,7 +7,7 @@ Currently only applies to HTML elements that are present on the page at the time
 Include the following into your HTML document:
 ```html
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://kree-nickm.github.io/element-list-controller/evc.js"></script>
+<script src="https://kree-nickm.github.io/element-list-controller/elc.js"></script>
 ```
 This will include both jQuery and the development version of this script. To load a specific release (recommended in case future versions alter or remove funtionality), use the URL for that release instead.
 
