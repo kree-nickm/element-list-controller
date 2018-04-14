@@ -20,7 +20,9 @@ This will include both jQuery and the development version of this script. To loa
 
 For examples, check out [the demo page](https://kree-nickm.github.io/element-list-controller/index.html) as well as some [basic CSS](https://kree-nickm.github.io/element-list-controller/basic.css) to make the page a little more user-friendly.
 
-If you add or remove elements from an element list dynamically, call `ELC_update(list_container)`, where `list_container` is a DOM reference to the element that you modified. It should be the one that has the `sortable`, `filtered`, and/or `paged` classes. If you add entirely new list container elements to the page dynamically, there isn't yet a way to add this scripts functionality to them.
+Elements added to the list dynamically after the page has loaded will be sorted/filtered/paginated automatically, provided the browser supports `MutationObserver`. Otherwise, `ELC_update(list_container)` can be called, where `list_container` is the element with the `sortable`/`filtered`/`paged` class(es).
+
+If you add entirely new list container elements to the page dynamically, there isn't yet a way to add this script's functionality to them.
 <a name="sorting"></a>
 ### Sorting
 Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted.

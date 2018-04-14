@@ -18,6 +18,22 @@ function ELC_update(list_container)
 	list_container.dispatchEvent(new Event('update'));
 }
 
+function ELC_element_added(mutationList)
+{
+	var updated = [];
+	for(var i in mutationList)
+	{
+		if(!updated.includes(mutationList[i].target) && mutationList[i].type == "childList")
+		{
+			updated.push(mutationList[i].target);
+			if(mutationList[i].target.tagName == "TBODY")
+				ELC_update(mutationList[i].target.parentNode);
+			else
+				ELC_update(mutationList[i].target);
+		}
+	}
+}
+
 // ---- Begin sorting functions ----
 function ELC_sort_event_listener(event)
 {
@@ -52,6 +68,7 @@ function ELC_sort_list(list_container)
 	if(list_container.ELC_current_sort_field == null)
 		return;
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
+	list.ELC_MutationObserver.disconnect();
 	for(var i = 0; i < list.children.length; i++)
 	{
 		if(list.children[i].tagName == "TR")
@@ -131,6 +148,7 @@ function ELC_sort_list(list_container)
 			}
 		}
 	}
+	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
 function ELC_merge_sort(list, container, target)
@@ -462,6 +480,18 @@ $(function(){
 			sortables[i].ELC_list_sorters = [];
 		if(sortables[i].style.position == "static")
 			sortables[i].style.position = "relative";
+		if(sortables[i].tagName == "TABLE")
+		{
+			if(sortables[i].tBodies[0].ELC_MutationObserver == null)
+				sortables[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+			sortables[i].tBodies[0].ELC_MutationObserver.observe(sortables[i], {childList:true});
+		}
+		else
+		{
+			if(sortables[i].ELC_MutationObserver == null)
+				sortables[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+			sortables[i].ELC_MutationObserver.observe(sortables[i], {childList:true});
+		}
 		// TODO: If this sortable has already been initilized and we're reloading it, iterate through ELC_list_sorters to remove event listeners from any no-longer-valid sorters
 	}
 	
