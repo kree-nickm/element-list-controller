@@ -1,5 +1,5 @@
 # Element List Controller
-Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery for now, but that will change as well. This is written only with modern browsers in mind. I will not be adding any support for browsers that do not follow a modern standards anytime soon, nor am I even going to attempt to test them or look up their features to determine whether they work or not.
+Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery for now, but that will change as well. This is written only with modern, updated browsers in mind. I will not be adding any support for browsers that do not follow modern standards anytime soon.
 
 ## Usage
 Include the following into your HTML document:
@@ -14,20 +14,118 @@ For examples, check out [the demo page](https://kree-nickm.github.io/element-lis
 If you add or remove elements from an element list dynamically, call `ELC_update(list_container)`, where `list_container` is a DOM reference to the element that you modified. It should be the one that has the `sortable`, `filtered`, and/or `paged` classes. If you add entirely new list container elements to the page dynamically, there isn't yet a way to add this scripts functionality to them.
 
 ### Sorting
-Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted. In any case, you can add the `sort-animated` class alongside the `sortable` class to animate the sorting, though this is experimental and will likely look awkward with paginated or filtered list containers.
+Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted.
+```html
+<div id="my_container" class="sortable">
+	<!-- All elements to be sorted go here. -->
+</div>
 
-The elements in the list will be sorted when you click on another designated element. In most cases, this element can be anything with the `sort` class as well as a `data-field` attribute identifying the field that the element list will be sorted by (more on that below). Additionally, the `sort` element needs to specify which container it will be operating on by including a `data-container` attribute with the `id` of the desired `sortable` element. Alternatively, all of the `sort` elements can be grouped together inside of an element with the `sorter` class, in which case only the `sorter` element needs to specify `data-container`. Lastly, if the `sort` elements are all inside of the `sortable` element somewhere, then it does not need to be specified at all - they will use their ancestor `sortable` element. The latter is generally only the case with `<table>` elements, where the `sort` classes would be added to the desired header cells in the `<thead>` element.
+<table id="my_table" class="sortable">
+	<thead>
+	</thead>
+	<tbody>
+		<!-- <TR> elements to be sorted go here. -->
+	</tbody>
+</table>
+```
+The elements in the list will be sorted when you click on another designated element. In most cases, this element can be anything with the `sort` class as well as a `data-field` attribute identifying the field that the element list will be sorted by (more on that below). Additionally, the `sort` element needs to specify which container it will be operating on by including a `data-container` attribute with the `id` of the desired `sortable` element. Alternatively, all of the `sort` elements can be grouped together inside of an element with the `sorter` class, in which case only the `sorter` element needs to specify `data-container`. Lastly, if the `sort` elements are all inside of the `sortable` element somewhere, then it does not need to be specified at all - they will use their ancestor `sortable` element. The latter is generally only the case with `<table>` elements, where the `sort` classes would be added to the desired header cells in the `<thead>` element. Note that `<table>`s also do not need to specify `data-field` for `sort`s in the `<thead>`, as they will automatically sort by the corresponding column of the header that is clicked.
+```html
+<div class="sorter" data-container="my_container">
+	<span class="sort" data-field="first_name">Sort By First Name</span>
+	<span class="sort" data-field="last_name">Sort By Last Name</span>
+</div>
+<button class="sort" data-field="something_else" data-container="my_container">Sort By Something Else</button>
+<div id="my_container" class="sortable">
+	<!-- All elements to be sorted go here. -->
+</div>
 
+<table id="my_table" class="sortable">
+	<thead>
+		<tr>
+			<th class="sort">First Name</th>
+			<th class="sort">Last Name</th>
+		</tr>
+	</thead>
+	<tbody>
+		<!-- <TR> elements to be sorted go here. -->
+	</tbody>
+</table>
+```
 You can also have a `sort` element specify what kind of data it is sorting. Use the `data-type` attribute. Valid values are as follows:
 * __text__: (default) The data will be treated as normal text, with any markup tags stripped away. This should sort it alphabetically according to the actual text that is readable by the user.
 * __html__: The data will be treated as text, but markup tags will not be stripped away. This will treat all of the inner HTML has a string and sort that alphabetically.
 * __number__: The data will be treated as numeric and sorted highest to lowest.
+```html
+<button class="sort" data-field="something_else" data-container="my_container" data-type="html">Sort By Something Else</button>
+<div id="my_container" class="sortable">
+	<!-- All elements to be sorted go here. -->
+</div>
 
+<table id="my_table" class="sortable">
+	<thead>
+		<tr>
+			<th class="sort" data-type="text">Name</th>
+			<th class="sort" data-type="number">Age</th>
+		</tr>
+	</thead>
+	<tbody>
+		<!-- <TR> elements to be sorted go here. -->
+	</tbody>
+</table>
+```
 The `sort` element can be clicked again to reverse the order. The merge-sort algorithm is used, so sorting is stable and should be quite fast even for extremely large lists of elements. You can also add the `sort-initial` class to a `sort` element, and the script will simulate a click event on that `sort` element once the list has initialized. This will set the default list order as well as add the appropriate `sortup`/`sortdown` classes.
-
-Finally, to actually fill in the sortable data inside of the element list, two choices are available:
-* An attribute can be included by an immediate child of the list container in this format: `data-<field>-value="<value>"`, where `<field>` corresponds to the value of `data-field` in the `sort` element, and `<value>` is your data.
+```html
+<button class="sort sort-initial" data-field="something_else" data-container="my_container" data-type="html">Sort By Something Else</button>
+<div id="my_container" class="sortable">
+	<!-- All elements to be sorted go here. -->
+</div>
+```
+Finally, to actually fill in the sortable data inside of the element list, you have a couple choices:
+* An attribute can be included by an immediate child of the list container in this format: `data-<field>-value="<value>"`, where `<field>` corresponds to the value of `data-field` in the `sort` element, and `<value>` is your data. Note that field names cannot contain hyphens (`-`) with this method, because of the way JavaScript translates them. This may be fixed in a future update.
 * A child element somewhere inside of the list element must have a `name` attribute set to the corresponding `data-field` of the desired `sort` element. The data to be sorted is the content inside of this child element. Alternatively, you can also include a `data-value` attribute in this element, and that data will be used to sort instead of the inner content.
+* If using a `<table>`, you do not need to do either of the above. Clicking a column header in side `<thead>` will sort by the corresponding column.
+```html
+<div class="sorter" data-container="my_container">
+	<span class="sort" data-field="first_name">Sort By First Name</span>
+	<span class="sort" data-field="last_name">Sort By Last Name</span>
+</div>
+<div id="my_container" class="sortable">
+	<div data-first_name-value="John">
+		<span name="last_name" data-value="Smith">von Smith</span> <!-- "Smith" will be used to sort this instead of "von Smith" -->
+	</div>
+	<!-- More elements here following the same format. -->
+</div>
+
+<table id="my_table" class="sortable">
+	<thead>
+		<tr>
+			<th class="sort" data-type="text">Name</th>
+			<th class="sort" data-type="number">Age</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Inigo Montoya</td>
+			<td data-value="30">Thirty</td>
+		</tr>
+		<!-- More rows here following the same format. -->
+	</tbody>
+</table>
+```
+The sorting can be animated by adding the `data-sort-transition-time` attribute to the `sortable` list container. The value of this attribute should be a string specifying the duration, ie. `1s`. You can also include the easing algorithm ie. `1s ease 0s`. See the (transition CSS property)[https://www.w3schools.com/cssref/css3_pr_transition.asp] for the possible syntax. This attribute uses the same syntax, but you cannot include a `property` argument. Animation is experimental and may have unintended side effects, as it permanently toys with the position, top, and left CSS properties.
+```html
+<div id="my_container" class="sortable" data-sort-transition-time="1s">
+	<!-- All elements to be sorted go here. -->
+</div>
+
+<table id="my_table" class="sortable" data-sort-transition-time=".35s ease-in-out">
+	<thead>
+	</thead>
+	<tbody>
+		<!-- <TR> elements to be sorted go here. -->
+	</tbody>
+</table>
+```
 #### CSS
 The `sortdown` class will be added to the sorting header element when it is clicked and active. This will be replaced with the `sortup` class if the header is clicked again the the order is reversed. The following example CSS can be used to add upward and downward arrows to the element when this happens:
 ```css

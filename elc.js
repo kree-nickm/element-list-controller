@@ -54,7 +54,7 @@ function ELC_sort_list(list_container)
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
 	{
-		if(list_container.tagName == "TABLE")
+		if(list.children[i].tagName == "TR")
 		{
 			if(list_container.ELC_current_sort_type == "number")
 				list.children[i].ELC_current_sort_value = parseFloat(list.children[i].children[list_container.ELC_current_sort_field].innerText);
@@ -80,9 +80,57 @@ function ELC_sort_list(list_container)
 			else
 				list.children[i].ELC_current_sort_value = string;
 		}
+		if(list_container.dataset.sortTransitionTime)
+		{
+			list.children[i].ELC_prevTop = list.children[i].offsetTop;
+			list.children[i].ELC_prevLeft = list.children[i].offsetLeft;
+		}
 	}
 	ELC_merge_sort(list.children, list_container, list);
-	ELC_update_offsets(list_container);
+	if(list_container.dataset.sortTransitionTime)
+	{
+		for(var i = 0; i < list.children.length; i++)
+		{
+			var element = list.children[i];
+			if(window.getComputedStyle(element, null).getPropertyValue("position") == "static")
+				element.style.position = "relative";
+			if(element.tagName == "TR")
+			{
+				// Why do TRs have to be so annoying.
+				for(var k = 0; k < element.children.length; k++)
+				{
+					var subelement = element.children[k];
+					if(window.getComputedStyle(subelement, null).getPropertyValue("position") == "static")
+						subelement.style.position = "relative";
+					subelement.style.transition = "all 0s";
+					subelement.style.top = (element.ELC_prevTop - element.offsetTop) +"px";
+					subelement.style.left = (element.ELC_prevLeft - element.offsetLeft) +"px";
+					setTimeout(function(element, subelement){
+						subelement.style.transition = "all "+ list_container.dataset.sortTransitionTime;
+						setTimeout(function(element, subelement){
+							// Not compatible with any top/left that may already be set.
+							subelement.style.top = "0px";
+							subelement.style.left = "0px";
+						}, 1, element, subelement);
+					}, 1, element, subelement);
+				}
+			}
+			else
+			{
+				element.style.transition = "all 0s";
+				element.style.top = (element.ELC_prevTop - element.offsetTop) +"px";
+				element.style.left = (element.ELC_prevLeft - element.offsetLeft) +"px";
+				setTimeout(function(element){
+					element.style.transition = "all "+ list_container.dataset.sortTransitionTime;
+					setTimeout(function(element){
+						// Not compatible with any top/left that may already be set.
+						element.style.top = "0px";
+						element.style.left = "0px";
+					}, 1, element);
+				}, 1, element);
+			}
+		}
+	}
 }
 
 function ELC_merge_sort(list, container, target)
@@ -120,16 +168,6 @@ function ELC_compare(a, b, container)
 		return (container.ELC_current_sort_reversed?-1:1) * (a.ELC_current_sort_value - b.ELC_current_sort_value);
 	else
 		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
-}
-
-function ELC_update_offsets(list_container)
-{
-	$(list_container).children("tbody").children("tr").each(function(i,row){
-		diff = row.offsetTopSaved - row.offsetTop;
-		row.offsetTopSaved = row.offsetTop;
-		if(list_container.ELC_animated && diff)
-			$(row).children().css("position", "relative").css("top", diff+"px").animate({"top": ""});
-	});
 }
 // ---- End sorting functions ----
 
@@ -424,10 +462,6 @@ $(function(){
 			sortables[i].ELC_list_sorters = [];
 		if(sortables[i].style.position == "static")
 			sortables[i].style.position = "relative";
-		if(sortables[i].classList.contains("sort-animated"))
-			sortables[i].ELC_animated = true;
-		else
-			sortables[i].ELC_animated = false;
 		// TODO: If this sortable has already been initilized and we're reloading it, iterate through ELC_list_sorters to remove event listeners from any no-longer-valid sorters
 	}
 	
