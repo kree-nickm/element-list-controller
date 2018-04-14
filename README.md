@@ -9,8 +9,8 @@ Provides robust options for sorting, filtering, and paginating a list of HTML el
 		* <a href="#filtering-options">Filtering Options</a>
 	* <a href="#paginating">Paginating</a>
 		* <a href="#paginating-css">CSS</a>
-
-## Usage <a name="usage"></a>
+<a name="usage"></a>
+## Usage
 Include the following into your HTML document:
 ```html
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -21,8 +21,8 @@ This will include both jQuery and the development version of this script. To loa
 For examples, check out [the demo page](https://kree-nickm.github.io/element-list-controller/index.html) as well as some [basic CSS](https://kree-nickm.github.io/element-list-controller/basic.css) to make the page a little more user-friendly.
 
 If you add or remove elements from an element list dynamically, call `ELC_update(list_container)`, where `list_container` is a DOM reference to the element that you modified. It should be the one that has the `sortable`, `filtered`, and/or `paged` classes. If you add entirely new list container elements to the page dynamically, there isn't yet a way to add this scripts functionality to them.
-
-### Sorting <a name="sorting"></a>
+<a name="sorting"></a>
+### Sorting
 Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted.
 ```html
 <div id="my_container" class="sortable">
@@ -92,7 +92,7 @@ The `sort` element can be clicked again to reverse the order. The merge-sort alg
 Finally, to actually fill in the sortable data inside of the element list, you have a couple choices:
 * An attribute can be included by an immediate child of the list container in this format: `data-<field>-value="<value>"`, where `<field>` corresponds to the value of `data-field` in the `sort` element, and `<value>` is your data. Note that field names cannot contain hyphens (`-`) with this method, because of the way JavaScript translates them. This may be fixed in a future update.
 * A child element somewhere inside of the list element must have a `name` attribute set to the corresponding `data-field` of the desired `sort` element. The data to be sorted is the content inside of this child element. Alternatively, you can also include a `data-value` attribute in this element, and that data will be used to sort instead of the inner content.
-* If using a `<table>`, you do not need to do either of the above. Clicking a column header in side `<thead>` will sort by the corresponding column.
+* If using a `<table>`, you do not need to do either of the above. Clicking a column header inside `<thead>` will sort by the corresponding column.
 ```html
 <div class="sorter" data-container="my_container">
 	<span class="sort" data-field="first_name">Sort By First Name</span>
@@ -121,7 +121,7 @@ Finally, to actually fill in the sortable data inside of the element list, you h
 	</tbody>
 </table>
 ```
-The sorting can be animated by adding the `data-sort-transition-time` attribute to the `sortable` list container. The value of this attribute should be a string specifying the duration, ie. `1s`. You can also include the easing algorithm ie. `1s ease 0s`. See the (transition CSS property)[https://www.w3schools.com/cssref/css3_pr_transition.asp] for the possible syntax. This attribute uses the same syntax, but you cannot include a `property` argument. Animation is experimental and may have unintended side effects, as it permanently toys with the position, top, and left CSS properties.
+The sorting can be animated by adding the `data-sort-transition-time` attribute to the `sortable` list container. The value of this attribute should be a string specifying the duration, ie. `1s`. You can also include the easing algorithm ie. `1s ease 0s`. See the [transition CSS property](https://www.w3schools.com/cssref/css3_pr_transition.asp) for the possible syntax. This attribute uses the same syntax, but you cannot include a `property` argument. Animation is experimental and may have unintended side effects, as it permanently toys with the position, top, and left CSS properties.
 ```html
 <div id="my_container" class="sortable" data-sort-transition-time="1s">
 	<!-- All elements to be sorted go here. -->
@@ -135,7 +135,8 @@ The sorting can be animated by adding the `data-sort-transition-time` attribute 
 	</tbody>
 </table>
 ```
-#### CSS <a name="sorting-css"></a>
+<a name="sorting-css"></a>
+#### CSS
 The `sortdown` class will be added to the sorting header element when it is clicked and active. This will be replaced with the `sortup` class if the header is clicked again the the order is reversed. The following example CSS can be used to add upward and downward arrows to the element when this happens:
 ```css
 .sort.sortup:after {
@@ -158,8 +159,8 @@ Additionally, the following CSS may be desirable in order to prevent the sorting
 	-ms-user-select: none;
 }
 ```
-
-### Filtering <a name="filtering"></a>
+<a name="filtering"></a>
+### Filtering
 Add the `filtered` class to a `<table>` element (referred to as the list container). The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be filtered.
 
 The only columns in the table that can be filtered upon are the ones that are topped with a header (`<th>` or `<td>`) containing the `filterable` class. Additionally, you can also add the `data-column` attribute to these header cells to give the column a more simple identifier. Otherwise, the identifier will be based on the text content of the header, which could cause problems in certain implementations or if the text is changed later without also changing any column-specific filter inputs.
@@ -171,7 +172,8 @@ By default, the filter input will search every field of a list element that corr
 Finally, a list of currently applied filters can be displayed if an element with the `filter-list` is included inside of the list container. That element's innerHTML will be populated with `<span>` elements representing all applies filters. This is experimental for now and will be improved upon in later releases.
 
 Note that the JavaScript does not explicitly hide the list elements that are filtered out. It instead adds the `filtered-out` class to them. In order to make them hidden, you must use CSS (see below).
-#### CSS <a name="filtering-css"></a>
+<a name="filtering-css"></a>
+#### CSS
 The `filtered-out` class will be added to any list element that does not match the currently applied filters. Use the following CSS to hide elements from view when they are not on the current page:
 ```css
 .filtered .filtered-out {
@@ -179,14 +181,15 @@ The `filtered-out` class will be added to any list element that does not match t
 }
 ```
 If you are also using the `filter-list` feature, then additional classes will be appended to the child elements of the filter list. `filter-and`, `filter-or`, and `filter-not` classes will be added to any filter terms that are and-separated, or-separated, or negated, respectively.
-#### Filter Options <a name="filtering-options"></a>
+<a name="filtering-options"></a>
+#### Filter Options
 For the end-user actually viewing and using the list container, the filter inputs work as follows:
 * Spaces separate each term entered into the field, and each term is considered a separate filter.
 * All terms are normally "and-separated", meaning *all* of them must be present in a list element, or that element will be filtered out.
 * Terms can be prepended with a `|` to make them "or-separated". Only one "or-separated" term must be present in a list element for it to be considered a match.
 * Terms can be negated by prepending a `-`. List items will be filtered out if they contain any negated term.
-
-### Paginating <a name="paginating"></a>
+<a name="paginating"></a>
+### Paginating
 Add the `paged` class to a `<table>` element (referred to as the list container). Anywhere within the `<table>` element, you will also need to add any or all of the following elements with the specified classes:
 * Any element with the `pageup` class. When this element is clicked, the list container will display the previous page.
 * Any element with the `pagedown` class. When this element is clicked, the list container will display the next page.
@@ -194,7 +197,8 @@ Add the `paged` class to a `<table>` element (referred to as the list container)
 * An `<input>` element with the `perpage` class. This should also have the `type` attribute set to `number`. When this number is changed, it will specify the number of list elements displayed on each page of the list container.
 
 The script accounts for any filtered list elements, so both features can be used simultaneously. Note that the JavaScript does not explicitly hide the list elements that are not on the current page. It instead adds the `paged-out` class to them. In order to make them hidden, you must use CSS (see below).
-#### CSS <a name="paginating-css"></a>
+<a name="paginating-css"></a>
+#### CSS
 The `paged-out` class will be added to any list element that is not on the current page of the list container. Use the following CSS to hide elements from view when they are not on the current page:
 ```css
 .paged .paged-out {
