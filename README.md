@@ -1,7 +1,16 @@
 # Element List Controller
 Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery for now, but that will change as well. This is written only with modern, updated browsers in mind. I will not be adding any support for browsers that do not follow modern standards anytime soon.
 
-## Usage
+* <a href="#usage">Usage</a>
+	* <a href="#sorting">Sorting</a>
+		* <a href="#sorting-css">CSS</a>
+	* <a href="#filtering">Filtering</a>
+		* <a href="#filtering-css">CSS</a>
+		* <a href="#filtering-options">Filtering Options</a>
+	* <a href="#paginating">Paginating</a>
+		* <a href="#paginating-css">CSS</a>
+
+## Usage <a name="usage"></a>
 Include the following into your HTML document:
 ```html
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -13,7 +22,7 @@ For examples, check out [the demo page](https://kree-nickm.github.io/element-lis
 
 If you add or remove elements from an element list dynamically, call `ELC_update(list_container)`, where `list_container` is a DOM reference to the element that you modified. It should be the one that has the `sortable`, `filtered`, and/or `paged` classes. If you add entirely new list container elements to the page dynamically, there isn't yet a way to add this scripts functionality to them.
 
-### Sorting
+### Sorting <a name="sorting"></a>
 Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted.
 ```html
 <div id="my_container" class="sortable">
@@ -126,7 +135,7 @@ The sorting can be animated by adding the `data-sort-transition-time` attribute 
 	</tbody>
 </table>
 ```
-#### CSS
+#### CSS <a name="sorting-css"></a>
 The `sortdown` class will be added to the sorting header element when it is clicked and active. This will be replaced with the `sortup` class if the header is clicked again the the order is reversed. The following example CSS can be used to add upward and downward arrows to the element when this happens:
 ```css
 .sort.sortup:after {
@@ -150,7 +159,7 @@ Additionally, the following CSS may be desirable in order to prevent the sorting
 }
 ```
 
-### Filtering
+### Filtering <a name="filtering"></a>
 Add the `filtered` class to a `<table>` element (referred to as the list container). The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be filtered.
 
 The only columns in the table that can be filtered upon are the ones that are topped with a header (`<th>` or `<td>`) containing the `filterable` class. Additionally, you can also add the `data-column` attribute to these header cells to give the column a more simple identifier. Otherwise, the identifier will be based on the text content of the header, which could cause problems in certain implementations or if the text is changed later without also changing any column-specific filter inputs.
@@ -162,7 +171,7 @@ By default, the filter input will search every field of a list element that corr
 Finally, a list of currently applied filters can be displayed if an element with the `filter-list` is included inside of the list container. That element's innerHTML will be populated with `<span>` elements representing all applies filters. This is experimental for now and will be improved upon in later releases.
 
 Note that the JavaScript does not explicitly hide the list elements that are filtered out. It instead adds the `filtered-out` class to them. In order to make them hidden, you must use CSS (see below).
-#### CSS
+#### CSS <a name="filtering-css"></a>
 The `filtered-out` class will be added to any list element that does not match the currently applied filters. Use the following CSS to hide elements from view when they are not on the current page:
 ```css
 .filtered .filtered-out {
@@ -170,14 +179,14 @@ The `filtered-out` class will be added to any list element that does not match t
 }
 ```
 If you are also using the `filter-list` feature, then additional classes will be appended to the child elements of the filter list. `filter-and`, `filter-or`, and `filter-not` classes will be added to any filter terms that are and-separated, or-separated, or negated, respectively.
-#### Filter Options
+#### Filter Options <a name="filtering-options"></a>
 For the end-user actually viewing and using the list container, the filter inputs work as follows:
 * Spaces separate each term entered into the field, and each term is considered a separate filter.
 * All terms are normally "and-separated", meaning *all* of them must be present in a list element, or that element will be filtered out.
 * Terms can be prepended with a `|` to make them "or-separated". Only one "or-separated" term must be present in a list element for it to be considered a match.
 * Terms can be negated by prepending a `-`. List items will be filtered out if they contain any negated term.
 
-### Paginating
+### Paginating <a name="paginating"></a>
 Add the `paged` class to a `<table>` element (referred to as the list container). Anywhere within the `<table>` element, you will also need to add any or all of the following elements with the specified classes:
 * Any element with the `pageup` class. When this element is clicked, the list container will display the previous page.
 * Any element with the `pagedown` class. When this element is clicked, the list container will display the next page.
@@ -185,7 +194,7 @@ Add the `paged` class to a `<table>` element (referred to as the list container)
 * An `<input>` element with the `perpage` class. This should also have the `type` attribute set to `number`. When this number is changed, it will specify the number of list elements displayed on each page of the list container.
 
 The script accounts for any filtered list elements, so both features can be used simultaneously. Note that the JavaScript does not explicitly hide the list elements that are not on the current page. It instead adds the `paged-out` class to them. In order to make them hidden, you must use CSS (see below).
-#### CSS
+#### CSS <a name="paginating-css"></a>
 The `paged-out` class will be added to any list element that is not on the current page of the list container. Use the following CSS to hide elements from view when they are not on the current page:
 ```css
 .paged .paged-out {
