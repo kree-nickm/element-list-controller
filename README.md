@@ -1,5 +1,5 @@
 # Element List Controller
-Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery.
+Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery for now, but that will change as well.
 
 Currently only applies to HTML elements that are present on the page at the time the page initially finishes loading. Cannot be used with elements that are dynamically added to the page via AJAX or anything similar.
 
@@ -14,26 +14,35 @@ This will include both jQuery and the development version of this script. To loa
 For examples, check out [the demo page](https://kree-nickm.github.io/element-list-controller/index.html) as well as some [basic CSS](https://kree-nickm.github.io/element-list-controller/basic.css) to make the page a little more user-friendly.
 
 ### Sorting
-Add the `sortable` class to a `<table>` element (referred to as the list container). You can add the `sort-animated` class in addition to animate the sorting, though this is experimental and will likely look awkward with paginated or filtered list containers. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted.
+Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted. In any case, you can add the `sort-animated` class alongside the `sortable` class to animate the sorting, though this is experimental and will likely look awkward with paginated or filtered list containers.
 
-Within the `<thead>` element, add the `sorter` class to any `<tr>` element that contains the fields (`<th>` or `<td>`) that you wish to use as a sorting header. This is optional, unless there are multiple `<tr>`s within `<thead>`, and you aren't using the first one.
+The elements in the list will be sorted when you click on another designated element. In most cases, this element can be anything with the `sort` class as well as a `data-field` attribute identifying the field that the element list will be sorted by (more on that below). Additionally, the `sort` element needs to specify which container it will be operating on by including a `data-container` attribute with the `id` of the desired `sortable` element. Alternatively, all of the `sort` elements can be grouped together inside of an element with the `sorter` class, in which case only the `sorter` element needs to specify `data-container`. Lastly, if the `sort` elements are all inside of the `sortable` element somewhere, then it does not need to be specified at all - they will use their ancestor `sortable` element. The latter is generally only the case with `<table>` elements, where the `sort` classes would be added to the desired header cells in the `<thead>` element.
 
-Within the above-mentioned `<tr>` elements, add the `sort` class to any fields that you want to serve as sorting headers. When these fields are clicked, the list container will be sorted according to the data in that field of each list element. Sorting headers can be clicked again to reverse the order.
+You can also have a `sort` element specify what kind of data it is sorting. Use the `data-type` attribute. Valid values are as follows:
+* __text__: (default) The data will be treated as normal text, with any markup tags stripped away. This should sort it alphabetically according to the actual text that is readable by the user.
+* __html__: The data will be treated as text, but markup tags will not be stripped away. This will treat all of the inner HTML has a string and sort that alphabetically.
+* __number__: The data will be treated as numeric and sorted highest to lowest.
 
-By default, the column will be sorted alphabetically by its HTML content. To change this behavior, you can add the `data-type` attribute to the sorting header. Valid values for the attribute are `text` (default) to sort alphabetically, `number` to sort numerically, or `link` to sort alphabetically when the field data contains `<a>` tags, and you want to sort by the link text.
+The sort element can be clicked again to reverse the order. The merge sort algorithm is used, so sorting is stable and should be quite fast even for extremely large lists of elements.
+
+Finally, to actually fill in the sortable data inside of the element list, two choices are available:
+* An attribute can be included by an immediate child of the list container in this format: `data-<field>-value="<value>"`, where `<field>` corresponds to the value of `data-field` in the `sort` element, and `<value>` is your data.
+* A child element somewhere inside of the list element must have a `name` attribute set to the corresponding `data-field` of the desired `sort` element. The data to be sorted is the content inside of this child element. Alternatively, you can also include a `data-value` attribute in this element, and that data will be used to sort instead of the inner content.
 #### CSS
 The `sortdown` class will be added to the sorting header element when it is clicked and active. This will be replaced with the `sortup` class if the header is clicked again the the order is reversed. The following example CSS can be used to add upward and downward arrows to the element when this happens:
 ```css
-.sortable .sortup:after {
+.sort.sortup:after {
 	content: "\2191";
 }
-.sortable .sortdown:after {
+.sort.sortdown:after {
 	content: "\2193";
 }
 ```
 Additionally, the following CSS may be desirable in order to prevent the sorting header fields from having their text highlighted when rapidly clicked:
 ```css
-.sortable .sort {
+.sortable .sort,
+.sorter[data-container] .sort,
+.sort[data-container] {
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;

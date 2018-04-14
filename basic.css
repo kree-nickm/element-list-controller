@@ -1,4 +1,6 @@
-.sortable .sort {
+.sortable .sort,
+.sorter[data-container] .sort,
+.sort[data-container] {
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;
@@ -7,11 +9,11 @@
 	-ms-user-select: none;
 }
 
-.sortable .sortup:after {
+.sort.sortup:after {
 	content: "\2191";
 }
 
-.sortable .sortdown:after {
+.sort.sortdown:after {
 	content: "\2193";
 }
 
@@ -40,8 +42,8 @@
 	display: none;
 }
 
-.paged .pageup,
-.paged .pagedown {
+.pageup,
+.pagedown {
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;
@@ -51,7 +53,21 @@
 	opacity: 0.5;
 }
 
-.paged .pageup.active,
-.paged .pagedown.active {
+.pageup.active,
+.pagedown.active {
 	opacity: 1;
+}
+
+#list_container {
+	width: 50%;
+}
+
+#list_container>div {
+	display: inline-block;
+	border: 1px solid black;
+	border-radius: 1ex;
+	margin: 1ex;
+	padding: 1ex;
+	width: 30ex;
+	height: 4em;
 }

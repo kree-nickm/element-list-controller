@@ -1,69 +1,95 @@
-// ---- Begin sorting functions ----
-function sort_rows(e, head, animate)
+Element.prototype.getFirstElementByName = function(name)
 {
-	if(!$(head).hasClass("sort"))
-		return true;
-	var table = $(e.target);
-	var key = table.data("sortkey");
-	var col = key<0 ? -1*key-1 : key;
-	var type = $(head).attr("data-type");
-	var body = table.children("tbody");
-	body.children("tr").each(function(i,e){ // need a new algorithm here, insertion sort is proving to be slow as heck
-		body.children("tr").each(function(k,e2){
-			// Check if we're comparing the same element to itself.
-			if(k == i)
-				return false;
-			
-			// Get the cells to compare. This includes the encompassing <td> or <th> tags.
-			myVal = $(e).children("tr :eq("+col+")");
-			hisVal = $(e2).children("tr :eq("+col+")");
-			
-			if(myVal.html() == "")
-				return false;
-			else if(hisVal.html() == "")
-			{
-				$(e).insertBefore(e2);
-				return false;
-			}
-			
-			if(type == "number") // numeric comparison
-			{
-				myVal = parseFloat(myVal.html());
-				hisVal = parseFloat(hisVal.html());
-				if(key != col && myVal < hisVal || key == col && myVal > hisVal)
-				{
-					$(e).insertBefore(e2);
-					return false;
-				}
-			}
-			else if(type == "link")  // link comparison
-			{
-				myVal = myVal.children("a:first").html();
-				hisVal = hisVal.children("a:first").html();
-				if(key != col && hisVal.localeCompare(myVal) < 0 || key == col && hisVal.localeCompare(myVal) > 0)
-				{
-					$(e).insertBefore(e2);
-					return false;
-				}
-			}
-			else
-			{
-				myVal = myVal.html();
-				hisVal = hisVal.html();
-				if(key != col && hisVal.localeCompare(myVal) < 0 || key == col && hisVal.localeCompare(myVal) > 0)
-				{
-					$(e).insertBefore(e2);
-					return false;
-				}
-			}
-		});
-	});
-	table.triggerHandler("save", [animate]);
+	for(var i = 0; i < this.children.length; i++)
+		if(this.children[i].getAttribute('name') == name)
+			return this.children[i];
+	for(var i = 0; i < this.children.length; i++)
+	{
+		var result = this.children[i].getFirstElementByName(name);
+		if(result != null)
+			return result;
+	}
+	return null;
 }
 
-function update_offsets(e, animate)
+// ---- Begin sorting functions ----
+function ELC_sort_list()
 {
-	$(e.target).children("tbody").children("tr").each(function(i,row){
+	var list = (this.tagName=="TABLE" ? this.tBodies[0] : this);
+	for(var i = 0; i < list.children.length; i++)
+	{
+		if(this.tagName == "TABLE")
+		{
+			if(this.ELC_current_sort_type == "number")
+				list.children[i].ELC_current_sort_value = parseFloat(list.children[i].children[this.ELC_current_sort_field].innerText);
+			else if(this.ELC_current_sort_type == "html")
+				list.children[i].ELC_current_sort_value = list.children[i].children[this.ELC_current_sort_field].innerHTML;
+			else
+				list.children[i].ELC_current_sort_value = list.children[i].children[this.ELC_current_sort_field].innerText;
+		}
+		else
+		{
+			if(list.children[i].dataset[this.ELC_current_sort_field+"Value"] != null)
+				var string = list.children[i].dataset[this.ELC_current_sort_field+"Value"];
+			else
+			{
+				var element = list.children[i].getFirstElementByName(this.ELC_current_sort_field);
+				if(element != null)
+					var string = (element.dataset.value!=null ? element.dataset.value : (this.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
+				else
+					var string = "";
+			}
+			if(this.ELC_current_sort_type == "number")
+				list.children[i].ELC_current_sort_value = parseFloat(string);
+			else
+				list.children[i].ELC_current_sort_value = string;
+		}
+	}
+	ELC_merge_sort(list.children, this, list);
+	ELC_update_offsets.call(this, this.ELC_animated);
+	$(this).triggerHandler("update");
+}
+
+function ELC_merge_sort(list, container, target)
+{
+	var one = Array.prototype.slice.call(list, 0, Math.floor(list.length/2));
+	var two = Array.prototype.slice.call(list, Math.floor(list.length/2));
+	if(one.length > 1)
+		ELC_merge_sort(one, container);
+	if(two.length > 1)
+		ELC_merge_sort(two, container);
+	for(var i = 0; i < list.length; i++)
+	{
+		if(!one.length || two.length && ELC_compare(two[0], one[0], container) > 0)
+		{
+			if(target != null && target.children.length == list.length)
+				target.appendChild(two.shift());
+			else
+				list[i] = two.shift();
+		}
+		else
+		{
+			if(target != null && target.children.length == list.length)
+				target.appendChild(one.shift());
+			else
+				list[i] = one.shift();
+		}
+	}
+	one = null;
+	two = null;
+}
+
+function ELC_compare(a, b, container)
+{
+	if(container.ELC_current_sort_type == "number")
+		return (container.ELC_current_sort_reversed?-1:1) * (a.ELC_current_sort_value - b.ELC_current_sort_value);
+	else
+		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
+}
+
+function ELC_update_offsets(animate)
+{
+	$(this).children("tbody").children("tr").each(function(i,row){
 		diff = row.offsetTopSaved - row.offsetTop;
 		row.offsetTopSaved = row.offsetTop;
 		if(animate && diff)
@@ -356,40 +382,90 @@ function display_page(e)
 var filter_columns = {};
 $(function(){
 	// --- Begin sorting setup
-	$(".sortable").bind("update", sort_rows).bind("save", update_offsets).css("position", "relative");
-	
-	// Currently only useful to account for "colspan". Should be made compatible with "rowspan" as well.
-	var sorter = $(".sortable thead .sorter th:first, .sortable thead .sorter td:first");
-	if(sorter.length == 0)
-		sorter = $(".sortable thead tr:first th:first, .sortable thead tr:first td:first");
-	sorter.each(function(e){
-		cell = $(this);
-		offset = 0;
-		while(cell.length)
-		{
-			cell.prop("sortIndex", cell.prop("cellIndex")+offset);
-			offset += cell.prop("colSpan") - 1;
-			cell = cell.next();
-		}
-	});
-	
-	$(".sortable thead .sort").click(function(e){
-		var col = this.sortIndex!=null ? this.sortIndex : this.cellIndex;
-		var table = $(this).parents("table.sortable").first();
-		$(this).siblings().addBack().removeClass("sortup sortdown");
-		if(table.data("sortkey") == col)
-		{
-			$(this).addClass("sortup");
-			table.data("sortkey", -1*col-1);
-		}
+	var sortables = document.getElementsByClassName("sortable");
+	for(var i = 0; i < sortables.length; i++)
+	{
+		sortables[i].ELC_list_sorters = [];
+		if(sortables[i].style.position == "static")
+			sortables[i].style.position = "relative";
+		if(sortables[i].classList.contains("sort-animated"))
+			sortables[i].ELC_animated = true;
 		else
+			sortables[i].ELC_animated = false;
+	}
+	
+	var sorts = document.getElementsByClassName("sort");
+	for(var i = 0; i < sorts.length; i++)
+	{
+		var current = sorts[i];
+		do {
+			if(current.classList.contains("sortable"))
+				sorts[i].ELC_list_container = current;
+			else if(current.classList.contains("sorter") && current.dataset.container != null)
+				sorts[i].ELC_list_container = document.getElementById(current.dataset.container);
+			current = current.parentElement;
+		} while(current != null && sorts[i].ELC_list_container == null);
+		
+		if(sorts[i].ELC_list_container != null)
 		{
-			$(this).addClass("sortdown");
-			table.data("sortkey", col);
+			if(sorts[i].ELC_list_container.tagName == "TABLE")
+			{
+				if(sorts[i].cellIndex > -1 && sorts[i].ELC_sort_field == null)
+				{
+					var offset = 0;
+					for(var k = 0; k < sorts[i].parentElement.children.length; k++)
+					{
+						if(sorts[i].parentElement.children[k].cellIndex > -1)
+						{
+							sorts[i].parentElement.children[k].ELC_sort_field = sorts[i].parentElement.children[k].cellIndex + offset;
+							offset += sorts[i].parentElement.children[k].colSpan - 1;
+						}
+					}
+				}
+			}
+			else if(sorts[i].dataset.field != null && sorts[i].dataset.field != "")
+				sorts[i].ELC_sort_field = sorts[i].dataset.field;
+			else
+				sorts[i].ELC_sort_field = (sorts[i].innerText!=null ? sorts[i].innerText : sorts[i].textContent);
+			
+			if(sorts[i].dataset.type == "number" || sorts[i].dataset.type == "html" || sorts[i].dataset.type == "text")
+				sorts[i].ELC_sort_type = sorts[i].dataset.type;
+			else
+				sorts[i].ELC_sort_type = "text";
+			
+			sorts[i].ELC_list_container.ELC_list_sorters.push(sorts[i]);
+			
+			sorts[i].addEventListener("click", function(event){
+				for(var k in this.ELC_list_container.ELC_list_sorters)
+				{
+					this.ELC_list_container.ELC_list_sorters[k].classList.remove("sortup");
+					this.ELC_list_container.ELC_list_sorters[k].classList.remove("sortdown");
+					if(this.ELC_list_container.ELC_list_sorters[k].ELC_sort_field == this.ELC_sort_field)
+					{
+						if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field && this.ELC_list_container.ELC_current_sort_reversed == false)
+							this.ELC_list_container.ELC_list_sorters[k].classList.add("sortup");
+						else
+							this.ELC_list_container.ELC_list_sorters[k].classList.add("sortdown");
+					}
+				}
+				this.ELC_list_container.ELC_current_sort_type = this.ELC_sort_type;
+				if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field)
+				{
+					this.ELC_list_container.ELC_current_sort_reversed = !this.ELC_list_container.ELC_current_sort_reversed;
+				}
+				else
+				{
+					this.ELC_list_container.ELC_current_sort_field = this.ELC_sort_field;
+					this.ELC_list_container.ELC_current_sort_reversed = false;
+				}
+				ELC_sort_list.call(this.ELC_list_container);
+			});
 		}
-		table.prop("lastClick", e);
-		table.triggerHandler("update", [this, table.hasClass("sort-animated")]);
-	});//.eq(0).click();
+	}
+	
+	var initial_sorts = document.getElementsByClassName("sort-initial");
+	for(var i = 0; i < initial_sorts.length; i++)
+		initial_sorts[i].dispatchEvent(new Event('click'));
 	// --- End sorting setup
 	
 	// --- Begin filtering setup

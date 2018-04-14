@@ -22,6 +22,8 @@
 		<tr class="sorter">
 			<th class="sort filterable" data-column="text" data-type="text">Text Column</th>
 			<th class="sort filterable" data-column="number" data-type="number">Numeric Column</th>
+			<th colspan="2"></th>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -57,6 +59,35 @@
 		<td><input class="filter" data-table="#demotable" data-column="number" type="number" placeholder="Search..."/></td>
 	</tr>
 </table>
+
+<h2>Arbitrary HTML</h2>
+<div class="sorter" data-container="list_container"> <!-- corresponds to TR within THEAD -->
+	<span class="sort" data-field="textfield" data-type="text">By Attribute</span>
+	<span class="sort" data-field="htmlfield" data-type="html">By Name</span>
+	<span class="sort" data-field="numberfield" data-type="number">By Number</span>
+</div>
+<div id="list_container" class="sortable"> <!-- corresponds to both a TABLE and TBODY -->
+	<div id="a" data-textfield-value="Foxtrot">
+		<span name="htmlfield"><b>Jim</b></span>
+		<span name="numberfield" data-value="3">Three</span>
+	</div>
+	<div id="b" data-textfield-value="Alpha">
+		<span name="htmlfield"><i>Dave</i></span>
+		<span name="numberfield" data-value="7">Seven</span>
+	</div>
+	<div id="c" data-textfield-value="Charlie">
+		<span name="htmlfield"><u>Allen</u></span>
+		<span name="numberfield" data-value="1">One</span>
+	</div>
+	<div id="d" data-textfield-value="Whiskey">
+		<span name="htmlfield"><span>Jeff</span></span>
+		<span name="numberfield" data-value="9">Nine</span>
+	</div>
+	<div id="e" data-textfield-value="Tango">
+		<span name="htmlfield"><del>Steve</del></span>
+		<span name="numberfield" data-value="4">Four</span>
+	</div>
+</div>
 
 </body>
 </html>
