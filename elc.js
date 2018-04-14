@@ -12,42 +12,77 @@ Element.prototype.getFirstElementByName = function(name)
 	return null;
 }
 
-// ---- Begin sorting functions ----
-function ELC_sort_list()
+function ELC_update(list_container)
 {
-	var list = (this.tagName=="TABLE" ? this.tBodies[0] : this);
+	ELC_sort_list(list_container);
+	list_container.dispatchEvent(new Event('update'));
+}
+
+// ---- Begin sorting functions ----
+function ELC_sort_event_listener(event)
+{
+	for(var i in this.ELC_list_container.ELC_list_sorters)
+	{
+		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortup");
+		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortdown");
+		if(this.ELC_list_container.ELC_list_sorters[i].ELC_sort_field == this.ELC_sort_field)
+		{
+			if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field && this.ELC_list_container.ELC_current_sort_reversed == false)
+				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortup");
+			else
+				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortdown");
+		}
+	}
+	this.ELC_list_container.ELC_current_sort_type = this.ELC_sort_type;
+	if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field)
+	{
+		this.ELC_list_container.ELC_current_sort_reversed = !this.ELC_list_container.ELC_current_sort_reversed;
+	}
+	else
+	{
+		this.ELC_list_container.ELC_current_sort_field = this.ELC_sort_field;
+		this.ELC_list_container.ELC_current_sort_reversed = false;
+	}
+	ELC_sort_list(this.ELC_list_container);
+	this.ELC_list_container.dispatchEvent(new Event('update'));
+}
+
+function ELC_sort_list(list_container)
+{
+	if(list_container.ELC_current_sort_field == null)
+		return;
+	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
 	{
-		if(this.tagName == "TABLE")
+		if(list_container.tagName == "TABLE")
 		{
-			if(this.ELC_current_sort_type == "number")
-				list.children[i].ELC_current_sort_value = parseFloat(list.children[i].children[this.ELC_current_sort_field].innerText);
-			else if(this.ELC_current_sort_type == "html")
-				list.children[i].ELC_current_sort_value = list.children[i].children[this.ELC_current_sort_field].innerHTML;
+			if(list_container.ELC_current_sort_type == "number")
+				list.children[i].ELC_current_sort_value = parseFloat(list.children[i].children[list_container.ELC_current_sort_field].innerText);
+			else if(list_container.ELC_current_sort_type == "html")
+				list.children[i].ELC_current_sort_value = list.children[i].children[list_container.ELC_current_sort_field].innerHTML;
 			else
-				list.children[i].ELC_current_sort_value = list.children[i].children[this.ELC_current_sort_field].innerText;
+				list.children[i].ELC_current_sort_value = list.children[i].children[list_container.ELC_current_sort_field].innerText;
 		}
 		else
 		{
-			if(list.children[i].dataset[this.ELC_current_sort_field+"Value"] != null)
-				var string = list.children[i].dataset[this.ELC_current_sort_field+"Value"];
+			if(list.children[i].dataset[list_container.ELC_current_sort_field+"Value"] != null)
+				var string = list.children[i].dataset[list_container.ELC_current_sort_field+"Value"];
 			else
 			{
-				var element = list.children[i].getFirstElementByName(this.ELC_current_sort_field);
+				var element = list.children[i].getFirstElementByName(list_container.ELC_current_sort_field);
 				if(element != null)
-					var string = (element.dataset.value!=null ? element.dataset.value : (this.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
+					var string = (element.dataset.value!=null ? element.dataset.value : (list_container.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
 				else
 					var string = "";
 			}
-			if(this.ELC_current_sort_type == "number")
+			if(list_container.ELC_current_sort_type == "number")
 				list.children[i].ELC_current_sort_value = parseFloat(string);
 			else
 				list.children[i].ELC_current_sort_value = string;
 		}
 	}
-	ELC_merge_sort(list.children, this, list);
-	ELC_update_offsets.call(this, this.ELC_animated);
-	$(this).triggerHandler("update");
+	ELC_merge_sort(list.children, list_container, list);
+	ELC_update_offsets(list_container);
 }
 
 function ELC_merge_sort(list, container, target)
@@ -87,12 +122,12 @@ function ELC_compare(a, b, container)
 		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
 }
 
-function ELC_update_offsets(animate)
+function ELC_update_offsets(list_container)
 {
-	$(this).children("tbody").children("tr").each(function(i,row){
+	$(list_container).children("tbody").children("tr").each(function(i,row){
 		diff = row.offsetTopSaved - row.offsetTop;
 		row.offsetTopSaved = row.offsetTop;
-		if(animate && diff)
+		if(list_container.ELC_animated && diff)
 			$(row).children().css("position", "relative").css("top", diff+"px").animate({"top": ""});
 	});
 }
@@ -385,13 +420,15 @@ $(function(){
 	var sortables = document.getElementsByClassName("sortable");
 	for(var i = 0; i < sortables.length; i++)
 	{
-		sortables[i].ELC_list_sorters = [];
+		if(sortables[i].ELC_list_sorters == null)
+			sortables[i].ELC_list_sorters = [];
 		if(sortables[i].style.position == "static")
 			sortables[i].style.position = "relative";
 		if(sortables[i].classList.contains("sort-animated"))
 			sortables[i].ELC_animated = true;
 		else
 			sortables[i].ELC_animated = false;
+		// TODO: If this sortable has already been initilized and we're reloading it, iterate through ELC_list_sorters to remove event listeners from any no-longer-valid sorters
 	}
 	
 	var sorts = document.getElementsByClassName("sort");
@@ -423,7 +460,7 @@ $(function(){
 					}
 				}
 			}
-			else if(sorts[i].dataset.field != null && sorts[i].dataset.field != "")
+			else if(sorts[i].dataset.field != null)
 				sorts[i].ELC_sort_field = sorts[i].dataset.field;
 			else
 				sorts[i].ELC_sort_field = (sorts[i].innerText!=null ? sorts[i].innerText : sorts[i].textContent);
@@ -433,39 +470,21 @@ $(function(){
 			else
 				sorts[i].ELC_sort_type = "text";
 			
-			sorts[i].ELC_list_container.ELC_list_sorters.push(sorts[i]);
-			
-			sorts[i].addEventListener("click", function(event){
-				for(var k in this.ELC_list_container.ELC_list_sorters)
-				{
-					this.ELC_list_container.ELC_list_sorters[k].classList.remove("sortup");
-					this.ELC_list_container.ELC_list_sorters[k].classList.remove("sortdown");
-					if(this.ELC_list_container.ELC_list_sorters[k].ELC_sort_field == this.ELC_sort_field)
-					{
-						if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field && this.ELC_list_container.ELC_current_sort_reversed == false)
-							this.ELC_list_container.ELC_list_sorters[k].classList.add("sortup");
-						else
-							this.ELC_list_container.ELC_list_sorters[k].classList.add("sortdown");
-					}
-				}
-				this.ELC_list_container.ELC_current_sort_type = this.ELC_sort_type;
-				if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field)
-				{
-					this.ELC_list_container.ELC_current_sort_reversed = !this.ELC_list_container.ELC_current_sort_reversed;
-				}
-				else
-				{
-					this.ELC_list_container.ELC_current_sort_field = this.ELC_sort_field;
-					this.ELC_list_container.ELC_current_sort_reversed = false;
-				}
-				ELC_sort_list.call(this.ELC_list_container);
-			});
+			if(!sorts[i].ELC_list_container.ELC_list_sorters.includes(sorts[i]))
+			{
+				sorts[i].ELC_list_container.ELC_list_sorters.push(sorts[i]);
+				sorts[i].addEventListener("click", ELC_sort_event_listener);
+			}
 		}
 	}
 	
 	var initial_sorts = document.getElementsByClassName("sort-initial");
 	for(var i = 0; i < initial_sorts.length; i++)
+	{
 		initial_sorts[i].dispatchEvent(new Event('click'));
+		initial_sorts[i].classList.remove("sort-initial");
+		// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
+	}
 	// --- End sorting setup
 	
 	// --- Begin filtering setup

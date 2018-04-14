@@ -1,7 +1,5 @@
 # Element List Controller
-Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery for now, but that will change as well.
-
-Currently only applies to HTML elements that are present on the page at the time the page initially finishes loading. Cannot be used with elements that are dynamically added to the page via AJAX or anything similar.
+Provides robust options for sorting, filtering, and paginating a list of HTML elements. Designed to work with tables, but will eventually work with any list of elements with corresponding attributes or child elements. Requires jQuery for now, but that will change as well. This is written only with modern browsers in mind. I will not be adding any support for browsers that do not follow a modern standards anytime soon, nor am I even going to attempt to test them or look up their features to determine whether they work or not.
 
 ## Usage
 Include the following into your HTML document:
@@ -13,6 +11,8 @@ This will include both jQuery and the development version of this script. To loa
 
 For examples, check out [the demo page](https://kree-nickm.github.io/element-list-controller/index.html) as well as some [basic CSS](https://kree-nickm.github.io/element-list-controller/basic.css) to make the page a little more user-friendly.
 
+If you add or remove elements from an element list dynamically, call `ELC_update(list_container)`, where `list_container` is a DOM reference to the element that you modified. It should be the one that has the `sortable`, `filtered`, and/or `paged` classes. If you add entirely new list container elements to the page dynamically, there isn't yet a way to add this scripts functionality to them.
+
 ### Sorting
 Add the `sortable` class to the element that contains all of the elements in your list. You should also give this element a unique `id`. In most cases, the elements you wish to sort must be the immediate children of the `sortable` element. The one exception is if a `<table>` is your `sortable` element, in which case the elements that you will be sorting must be `<tr>`s inside of a `<tbody>` inside of the `<table>`. The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be sorted. In any case, you can add the `sort-animated` class alongside the `sortable` class to animate the sorting, though this is experimental and will likely look awkward with paginated or filtered list containers.
 
@@ -23,7 +23,7 @@ You can also have a `sort` element specify what kind of data it is sorting. Use 
 * __html__: The data will be treated as text, but markup tags will not be stripped away. This will treat all of the inner HTML has a string and sort that alphabetically.
 * __number__: The data will be treated as numeric and sorted highest to lowest.
 
-The sort element can be clicked again to reverse the order. The merge sort algorithm is used, so sorting is stable and should be quite fast even for extremely large lists of elements.
+The `sort` element can be clicked again to reverse the order. The merge-sort algorithm is used, so sorting is stable and should be quite fast even for extremely large lists of elements. You can also add the `sort-initial` class to a `sort` element, and the script will simulate a click event on that `sort` element once the list has initialized. This will set the default list order as well as add the appropriate `sortup`/`sortdown` classes.
 
 Finally, to actually fill in the sortable data inside of the element list, two choices are available:
 * An attribute can be included by an immediate child of the list container in this format: `data-<field>-value="<value>"`, where `<field>` corresponds to the value of `data-field` in the `sort` element, and `<value>` is your data.
