@@ -64,8 +64,10 @@ The elements in the list will be sorted when you click on another designated ele
 ```
 You can also have a `sort` element specify what kind of data it is sorting. Use the `data-type` attribute. Valid values are as follows:
 * __text__: (default) The data will be treated as normal text, with any markup tags stripped away. This should sort it alphabetically according to the actual text that is readable by the user.
-* __html__: The data will be treated as text, but markup tags will not be stripped away. This will treat all of the inner HTML has a string and sort that alphabetically.
-* __number__: The data will be treated as numeric and sorted highest to lowest.
+* __html__: The data will be treated as text, but markup tags will not be stripped away. This will treat all of the inner HTML as text and sort that alphabetically.
+* __number__: The data will be treated as numeric and sorted lowest to highest.
+
+By default, the sorting will go in ascending order on the first click, as noted above. You can reverse that by adding the `data-order` attribute to the `sort` element. Setting that attribute to any string that starts with `d` well make that field sort in descending order on the first click.
 ```html
 <button class="sort" data-field="something_else" data-container="my_container" data-type="html">Sort By Something Else</button>
 <div id="my_container" class="sortable">
@@ -76,7 +78,7 @@ You can also have a `sort` element specify what kind of data it is sorting. Use 
 	<thead>
 		<tr>
 			<th class="sort" data-type="text">Name</th>
-			<th class="sort" data-type="number">Age</th>
+			<th class="sort" data-type="number" data-order="desc">Age</th>
 		</tr>
 	</thead>
 	<tbody>

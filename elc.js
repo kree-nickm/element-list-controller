@@ -57,7 +57,7 @@ function ELC_sort_event_listener(event)
 	else
 	{
 		this.ELC_list_container.ELC_current_sort_field = this.ELC_sort_field;
-		this.ELC_list_container.ELC_current_sort_reversed = false;
+		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
 	ELC_sort_list(this.ELC_list_container);
 	this.ELC_list_container.dispatchEvent(new Event('update'));
@@ -176,14 +176,12 @@ function ELC_merge_sort(list, container, target)
 				list[i] = one.shift();
 		}
 	}
-	one = null;
-	two = null;
 }
 
 function ELC_compare(a, b, container)
 {
 	if(container.ELC_current_sort_type == "number")
-		return (container.ELC_current_sort_reversed?-1:1) * (a.ELC_current_sort_value - b.ELC_current_sort_value);
+		return (container.ELC_current_sort_reversed?-1:1) * (b.ELC_current_sort_value - a.ELC_current_sort_value);
 	else
 		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
 }
