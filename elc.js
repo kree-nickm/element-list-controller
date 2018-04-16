@@ -41,22 +41,22 @@ function ELC_sort_event_listener(event)
 	{
 		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortup");
 		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortdown");
-		if(this.ELC_list_container.ELC_list_sorters[i].ELC_sort_field == this.ELC_sort_field)
+		if(this.ELC_list_container.ELC_list_sorters[i].ELC_field == this.ELC_field)
 		{
-			if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field && this.ELC_list_container.ELC_current_sort_reversed == false)
+			if(this.ELC_list_container.ELC_current_sort_field == this.ELC_field && this.ELC_list_container.ELC_current_sort_reversed == false)
 				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortup");
 			else
 				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortdown");
 		}
 	}
 	this.ELC_list_container.ELC_current_sort_type = this.ELC_sort_type;
-	if(this.ELC_list_container.ELC_current_sort_field == this.ELC_sort_field)
+	if(this.ELC_list_container.ELC_current_sort_field == this.ELC_field)
 	{
 		this.ELC_list_container.ELC_current_sort_reversed = !this.ELC_list_container.ELC_current_sort_reversed;
 	}
 	else
 	{
-		this.ELC_list_container.ELC_current_sort_field = this.ELC_sort_field;
+		this.ELC_list_container.ELC_current_sort_field = this.ELC_field;
 		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
 	ELC_sort_list(this.ELC_list_container);
@@ -184,6 +184,18 @@ function ELC_compare(a, b, container)
 		return (container.ELC_current_sort_reversed?-1:1) * (b.ELC_current_sort_value - a.ELC_current_sort_value);
 	else
 		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
+}
+
+function ELC_get_sort_parent(current)
+{
+	do {
+		if(current.classList.contains("sortable"))
+			return current;
+		else if((current.classList.contains("sort") || current.classList.contains("sorter")) && current.dataset.container != null)
+			return document.getElementById(current.dataset.container);
+		current = current.parentElement;
+	} while(current != null);
+	return null;
 }
 // ---- End sorting functions ----
 
@@ -416,7 +428,7 @@ function filter_changed(e)
 		console.log("Cannot find the table this filter is meant to apply to: "+ $(this));
 		return false;
 	}
-	if(e.type == "keyup") // Give user some "time" to finish typing.
+	if(e != null && e.type == "keyup") // Give user some "time" to finish typing.
 		filter_delay = setTimeout(function(t){t.triggerHandler("update");}, 250, table);
 	else
 		table.triggerHandler("update");
@@ -469,7 +481,8 @@ function display_page(e)
 // ---- End paginating functions ----
 
 var filter_columns = {};
-$(function(){
+function ELC_initialize(event)
+{
 	// --- Begin sorting setup
 	var sortables = document.getElementsByClassName("sortable");
 	for(var i = 0; i < sortables.length; i++)
@@ -490,42 +503,43 @@ $(function(){
 				sortables[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
 			sortables[i].ELC_MutationObserver.observe(sortables[i], {childList:true});
 		}
-		// TODO: If this sortable has already been initilized and we're reloading it, iterate through ELC_list_sorters to remove event listeners from any no-longer-valid sorters
+		for(var k in sortables[i].ELC_list_sorters)
+		{
+			// TODO: Fix this: ELC_get_sort_parent gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
+			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_get_sort_parent(sortables[i].ELC_list_sorters[k]);
+			if(sortables[i].ELC_list_sorters[k].ELC_list_container != sortables[i])
+			{
+				sortables[i].ELC_list_sorters[k].removeEventListener("click", ELC_sort_event_listener);
+				delete sortables[i].ELC_list_sorters[k];
+			}
+		}
 	}
 	
 	var sorts = document.getElementsByClassName("sort");
 	for(var i = 0; i < sorts.length; i++)
 	{
-		var current = sorts[i];
-		do {
-			if(current.classList.contains("sortable"))
-				sorts[i].ELC_list_container = current;
-			else if(current.classList.contains("sorter") && current.dataset.container != null)
-				sorts[i].ELC_list_container = document.getElementById(current.dataset.container);
-			current = current.parentElement;
-		} while(current != null && sorts[i].ELC_list_container == null);
-		
+		sorts[i].ELC_list_container = ELC_get_sort_parent(sorts[i]);
 		if(sorts[i].ELC_list_container != null)
 		{
 			if(sorts[i].ELC_list_container.tagName == "TABLE")
 			{
-				if(sorts[i].cellIndex > -1 && sorts[i].ELC_sort_field == null)
+				if(sorts[i].cellIndex > -1 && sorts[i].ELC_field == null)
 				{
 					var offset = 0;
 					for(var k = 0; k < sorts[i].parentElement.children.length; k++)
 					{
 						if(sorts[i].parentElement.children[k].cellIndex > -1)
 						{
-							sorts[i].parentElement.children[k].ELC_sort_field = sorts[i].parentElement.children[k].cellIndex + offset;
+							sorts[i].parentElement.children[k].ELC_field = sorts[i].parentElement.children[k].cellIndex + offset;
 							offset += sorts[i].parentElement.children[k].colSpan - 1;
 						}
 					}
 				}
 			}
 			else if(sorts[i].dataset.field != null)
-				sorts[i].ELC_sort_field = sorts[i].dataset.field;
+				sorts[i].ELC_field = sorts[i].dataset.field;
 			else
-				sorts[i].ELC_sort_field = (sorts[i].innerText!=null ? sorts[i].innerText : sorts[i].textContent);
+				sorts[i].ELC_field = (sorts[i].innerText!=null ? sorts[i].innerText : sorts[i].textContent);
 			
 			if(sorts[i].dataset.type == "number" || sorts[i].dataset.type == "html" || sorts[i].dataset.type == "text")
 				sorts[i].ELC_sort_type = sorts[i].dataset.type;
@@ -550,18 +564,39 @@ $(function(){
 	// --- End sorting setup
 	
 	// --- Begin filtering setup
-	$(".filtered").bind("update", apply_filter);
-	$(".filter").keyup(filter_changed).change(filter_changed).keyup();
-	$(".filtered thead .filterable").each(function(i,e){ // why do we need .filterable? why not just add every column to this? perhaps to counter multiple header rows or colspan/rowspan
-		if($(e).data("column"))
-			filter_columns[$(e).data("column").toLowerCase()] = e.cellIndex;
-		else
-			filter_columns[$(e).html().toLowerCase()] = e.cellIndex;
-	});
+	var filterables = document.getElementsByClassName("filtered");
+	for(var i = 0; i < filterables.length; i++)
+	{
+		//filterables[i].addEventListener("update", apply_filter);
+		$(filterables[i]).bind("update", apply_filter);
+		var filter_fields = filterables[i].getElementsByClassName("filterable");
+		for(var k = 0; k < filter_fields.length; k++)
+		{
+			// May need to fix .cellIndex here like we did in the sorting code
+			if(filter_fields[k].dataset.column != null)
+				filter_columns[filter_fields[k].dataset.column.toLowerCase()] = filter_fields[k].cellIndex;
+			else
+				filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
+		}
+	}
+	
+	var filters = document.getElementsByClassName("filter");
+	for(var i = 0; i < filters.length; i++)
+	{
+		filters[i].addEventListener("keyup", filter_changed);
+		filters[i].addEventListener("change", filter_changed);
+		filter_changed.call(filters[i]);
+	}
 	// --- End filtering setup
 	
 	// --- Begin paginating setup
-	$(".paged").bind("update", display_page).data("page", 0);
+	var pages = document.getElementsByClassName("paged");
+	for(var i = 0; i < pages.length; i++)
+	{
+		//pages[i].addEventListener("update", display_page);
+		$(pages[i]).bind("update", display_page);
+		pages[i].dataset.page = 0;
+	}
 	
 	$(".paged .pageup").click(function(e){
 		var table = $(this).parents("table").first();
@@ -594,4 +629,6 @@ $(function(){
 		table.triggerHandler("update");
 	}).change();
 	// --- End paginating setup
-});
+};
+
+document.addEventListener("DOMContentLoaded", ELC_initialize);
