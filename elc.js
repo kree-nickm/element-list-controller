@@ -219,70 +219,12 @@ function ELC_apply_filter(list_container)
 {
 	if(list_container.ELC_list_filters == null)
 		return;
-	// Parse the filter inputs into these arrays for processing
-	// TODO: move these into the event handler and save them to the object properties, no need for them to be rebuilt when the filters haven't changed
-	var column_filters_and = {};
-	var column_filters_or = {};
-	var column_filters_not = {};
-	for(var i = 0; i < list_container.ELC_list_filters.length; i++)
-	{
-		if(!column_filters_and[list_container.ELC_list_filters[i].ELC_field])
-			column_filters_and[list_container.ELC_list_filters[i].ELC_field] = [];
-		if(!column_filters_or[list_container.ELC_list_filters[i].ELC_field])
-			column_filters_or[list_container.ELC_list_filters[i].ELC_field] = [];
-		if(!column_filters_not[list_container.ELC_list_filters[i].ELC_field])
-			column_filters_not[list_container.ELC_list_filters[i].ELC_field] = [];
-		var type = (list_container.ELC_list_filters[i].attributes.type!=null ? list_container.ELC_list_filters[i].attributes.type.textContent : "");
-		switch(type)
-		{
-			case "checkbox":
-				if(list_container.ELC_list_filters[i].checked && list_container.ELC_list_filters[i].value.length > 0)
-					column_filters_or[list_container.ELC_list_filters[i].ELC_field].push(list_container.ELC_list_filters[i].value);
-				break;
-			case "radio":
-				if(list_container.ELC_list_filters[i].checked && list_container.ELC_list_filters[i].value.length > 0)
-					column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(list_container.ELC_list_filters[i].value);
-				break;
-			case "number":
-				if(list_container.ELC_list_filters[i].value.length > 0)
-					column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(list_container.ELC_list_filters[i].value);
-				break;
-			case "text":
-			case "":
-				var string = list_container.ELC_list_filters[i].value;
-				if(string)
-				{
-					var strings = string.split(" ");
-					for(var s in strings)
-					{
-						if(strings[s][0] == "+" && strings[s].length > 1)
-						{
-							column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
-						}
-						else if(strings[s][0] == "|" && strings[s].length > 1)
-						{
-							column_filters_or[list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
-						}
-						else if(strings[s][0] == "-" && strings[s].length > 1)
-						{
-							column_filters_not[list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
-						}
-						else if(strings[s].length > 0)
-						{
-							column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(strings[s]);
-						}
-					}
-				}
-				break;
-		}
-	}
-	// Parsing complete, now check each element to see if the filters apply.
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	list.ELC_MutationObserver.disconnect();
 	for(var i = 0; i < list.children.length; i++)
 	{
 		list.children[i].classList.remove("filtered-out");
-		for(var k in column_filters_and) // & column_filters_or & column_filters_not - they should all have the same keys
+		for(var k in list_container.ELC_active_filters.and) // & list_container.ELC_active_filters.or & list_container.ELC_active_filters.not - they should all have the same keys
 		{
 			// k is either "" for a filter that applies to all text in the element, or the identifier of the data to be matched against
 			if(k)
@@ -320,13 +262,13 @@ function ELC_apply_filter(list_container)
 			text = text.toLowerCase();
 			
 			var and_clause = true;
-			if(column_filters_and[k] && column_filters_and[k].length > 0)
+			if(list_container.ELC_active_filters.and[k] && list_container.ELC_active_filters.and[k].length > 0)
 			{
-				for(var j in column_filters_and[k])
+				for(var j in list_container.ELC_active_filters.and[k])
 				{
 					try // There should be no blank strings in the array, but just in case...
 					{
-						if(text.indexOf(column_filters_and[k][j].toLowerCase()) == -1)
+						if(text.indexOf(list_container.ELC_active_filters.and[k][j].toLowerCase()) == -1)
 						{
 							and_clause = false;
 							break;
@@ -340,14 +282,14 @@ function ELC_apply_filter(list_container)
 			}
 			
 			var or_clause = true;
-			if(column_filters_or[k] && column_filters_or[k].length > 0)
+			if(list_container.ELC_active_filters.or[k] && list_container.ELC_active_filters.or[k].length > 0)
 			{
 				or_clause = false;
-				for(var j in column_filters_or[k])
+				for(var j in list_container.ELC_active_filters.or[k])
 				{
 					try // There should be no blank strings in the array, but just in case...
 					{
-						if(text.indexOf(column_filters_or[k][j].toLowerCase()) != -1)
+						if(text.indexOf(list_container.ELC_active_filters.or[k][j].toLowerCase()) != -1)
 						{
 							or_clause = true;
 							break;
@@ -361,13 +303,13 @@ function ELC_apply_filter(list_container)
 			}
 			
 			var not_clause = true;
-			if(column_filters_not[k] && column_filters_not[k].length > 0)
+			if(list_container.ELC_active_filters.not[k] && list_container.ELC_active_filters.not[k].length > 0)
 			{
-				for(var j in column_filters_not[k])
+				for(var j in list_container.ELC_active_filters.not[k])
 				{
 					try // There should be no blank strings in the array, but just in case...
 					{
-						if(text.indexOf(column_filters_not[k][j].toLowerCase()) != -1)
+						if(text.indexOf(list_container.ELC_active_filters.not[k][j].toLowerCase()) != -1)
 						{
 							not_clause = false;
 							break;
@@ -380,7 +322,7 @@ function ELC_apply_filter(list_container)
 				}
 			}
 			
-			if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, andFilters:column_filters_and[k], orFilters:column_filters_or[k], notFilters:column_filters_not[k], andResult:and_clause, orResult:or_clause, notResult:not_clause});
+			if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, andFilters:list_container.ELC_active_filters.and[k], orFilters:list_container.ELC_active_filters.or[k], notFilters:list_container.ELC_active_filters.not[k], andResult:and_clause, orResult:or_clause, notResult:not_clause});
 			
 			if(!and_clause || !or_clause || !not_clause)
 			{
@@ -393,39 +335,39 @@ function ELC_apply_filter(list_container)
 	if(list_container.ELC_filter_list != null)
 	{
 		list_container.ELC_filter_list.innerHTML = "";
-		for(var i in column_filters_and)
-			if(column_filters_and[i].length > 0)
-				for(var k in column_filters_and[i])
+		for(var i in list_container.ELC_active_filters.and)
+			if(list_container.ELC_active_filters.and[i].length > 0)
+				for(var k in list_container.ELC_active_filters.and[i])
 				{
 					var span = document.createElement("span");
 					span.classList.add("filter-and");
 					span.dataset.field = i;
-					span.dataset.value = column_filters_and[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + column_filters_and[i][k]));
+					span.dataset.value = list_container.ELC_active_filters.and[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + list_container.ELC_active_filters.and[i][k]));
 					span.addEventListener("click", remove_filter);
 					list_container.ELC_filter_list.appendChild(span);
 				}
-		for(var i in column_filters_or)
-			if(column_filters_or[i].length > 0)
-				for(var k in column_filters_or[i])
+		for(var i in list_container.ELC_active_filters.or)
+			if(list_container.ELC_active_filters.or[i].length > 0)
+				for(var k in list_container.ELC_active_filters.or[i])
 				{
 					var span = document.createElement("span");
 					span.classList.add("filter-or");
 					span.dataset.field = i;
-					span.dataset.value = column_filters_or[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + column_filters_or[i][k]));
+					span.dataset.value = list_container.ELC_active_filters.or[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + list_container.ELC_active_filters.or[i][k]));
 					span.addEventListener("click", remove_filter);
 					list_container.ELC_filter_list.appendChild(span);
 				}
-		for(var i in column_filters_not)
-			if(column_filters_not[i].length > 0)
-				for(var k in column_filters_not[i])
+		for(var i in list_container.ELC_active_filters.not)
+			if(list_container.ELC_active_filters.not[i].length > 0)
+				for(var k in list_container.ELC_active_filters.not[i])
 				{
 					var span = document.createElement("span");
 					span.classList.add("filter-not");
 					span.dataset.field = i;
-					span.dataset.value = column_filters_not[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + column_filters_not[i][k]));
+					span.dataset.value = list_container.ELC_active_filters.not[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + list_container.ELC_active_filters.not[i][k]));
 					span.addEventListener("click", remove_filter);
 					list_container.ELC_filter_list.appendChild(span);
 				}
@@ -444,9 +386,71 @@ function ELC_filter_change_listener(e)
 		return;
 	}
 	if(e != null && e.type == "keyup") // Give user some "time" to finish typing.
-		filter_delay = setTimeout(function(c){ELC_apply_filter(c)}, 250, this.ELC_list_container);
+		filter_delay = setTimeout(function(c,e){ELC_filter_change_listener_step2.call(c,e);}, 250, this, e);
 	else
-		ELC_apply_filter(this.ELC_list_container);
+		ELC_filter_change_listener_step2.call(this, e);
+}
+
+function ELC_filter_change_listener_step2(e)
+{
+	this.ELC_list_container.ELC_active_filters = {
+		and: {},
+		or: {},
+		not: {}
+	};
+	for(var i = 0; i < this.ELC_list_container.ELC_list_filters.length; i++)
+	{
+		if(!this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field])
+			this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field] = [];
+		if(!this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field])
+			this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field] = [];
+		if(!this.ELC_list_container.ELC_active_filters.not[this.ELC_list_container.ELC_list_filters[i].ELC_field])
+			this.ELC_list_container.ELC_active_filters.not[this.ELC_list_container.ELC_list_filters[i].ELC_field] = [];
+		var type = (this.ELC_list_container.ELC_list_filters[i].attributes.type!=null ? this.ELC_list_container.ELC_list_filters[i].attributes.type.textContent : "");
+		switch(type)
+		{
+			case "checkbox":
+				if(this.ELC_list_container.ELC_list_filters[i].checked && this.ELC_list_container.ELC_list_filters[i].value.length > 0)
+					this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].value);
+				break;
+			case "radio":
+				if(this.ELC_list_container.ELC_list_filters[i].checked && this.ELC_list_container.ELC_list_filters[i].value.length > 0)
+					this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].value);
+				break;
+			case "number":
+				if(this.ELC_list_container.ELC_list_filters[i].value.length > 0)
+					this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].value);
+				break;
+			case "text":
+			case "":
+				var string = this.ELC_list_container.ELC_list_filters[i].value;
+				if(string)
+				{
+					var strings = string.split(" ");
+					for(var s in strings)
+					{
+						if(strings[s][0] == "+" && strings[s].length > 1)
+						{
+							this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
+						}
+						else if(strings[s][0] == "|" && strings[s].length > 1)
+						{
+							this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
+						}
+						else if(strings[s][0] == "-" && strings[s].length > 1)
+						{
+							this.ELC_list_container.ELC_active_filters.not[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
+						}
+						else if(strings[s].length > 0)
+						{
+							this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(strings[s]);
+						}
+					}
+				}
+				break;
+		}
+	}
+	ELC_apply_filter(this.ELC_list_container);
 }
 
 function remove_filter(e)
