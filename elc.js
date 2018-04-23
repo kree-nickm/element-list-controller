@@ -15,10 +15,9 @@ Element.prototype.getFirstElementByName = function(name)
 
 function ELC_update(list_container)
 {
-	// TODO: either here or in these methods, don't attempt the method if they don't have the appropriate class
 	ELC_sort_list(list_container);
 	ELC_apply_filter(list_container);
-	// ELC_page()
+	// Paginating function not needed here because both above functions will call it. Also, TODO: fix that; call it only once.
 }
 
 function ELC_element_added(mutationList)
@@ -60,6 +59,11 @@ function ELC_get_list_container(current, containerClass, myClasses)
 // ---- Begin sorting functions ----
 function ELC_sort_event_listener(event)
 {
+	if(this.ELC_list_container == null)
+	{
+		console.log("Cannot find the table this sorter is meant to apply to: "+ $(this));
+		return;
+	}
 	for(var i in this.ELC_list_container.ELC_list_sorters)
 	{
 		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortup");
@@ -170,7 +174,7 @@ function ELC_sort_list(list_container)
 			}
 		}
 	}
-	// ELC_page
+	ELC_display_page(list_container);
 	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
@@ -213,7 +217,10 @@ function ELC_compare(a, b, container)
 // ---- Begin filtering functions ----
 function ELC_apply_filter(list_container)
 {
+	if(list_container.ELC_list_filters == null)
+		return;
 	// Parse the filter inputs into these arrays for processing
+	// TODO: move these into the event handler and save them to the object properties, no need for them to be rebuilt when the filters haven't changed
 	var column_filters_and = {};
 	var column_filters_or = {};
 	var column_filters_not = {};
@@ -382,6 +389,7 @@ function ELC_apply_filter(list_container)
 			}
 		}
 	}
+	// TODO: save the created elements and don't recreate them if they haven't changed, also move this to the event handler
 	if(list_container.ELC_filter_list != null)
 	{
 		list_container.ELC_filter_list.innerHTML = "";
@@ -422,7 +430,7 @@ function ELC_apply_filter(list_container)
 					list_container.ELC_filter_list.appendChild(span);
 				}
 	}
-	// ELC_page
+	ELC_display_page(list_container);
 	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
@@ -433,7 +441,7 @@ function ELC_filter_change_listener(e)
 	if(this.ELC_list_container == null)
 	{
 		console.log("Cannot find the table this filter is meant to apply to: "+ $(this));
-		return false;
+		return;
 	}
 	if(e != null && e.type == "keyup") // Give user some "time" to finish typing.
 		filter_delay = setTimeout(function(c){ELC_apply_filter(c)}, 250, this.ELC_list_container);
@@ -448,42 +456,56 @@ function remove_filter(e)
 // ---- End filtering functions ----
 
 // ---- Begin paginating functions ----
-function display_page(e)
+function ELC_display_page(list_container)
 {
-	var table = $(e.target);
-	var page = table.data("page");
-	var perpage = table.data("perpage");
-	var rows = table.children("tbody").children("tr").not(".filtered-out"); // determine if filter excludes them
-	
-	if(page <= 0)
+	if(list_container.ELC_current_page == null)
+		return;
+	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
+	var rows = [];
+	for(var i = 0; i < list.children.length; i++)
 	{
-		table.find(".pageup").removeClass("active");
-		page = 0;
-		table.data("page", page);
+		list.children[i].classList.remove("paged-out");
+		list.children[i].classList.remove("elceven");
+		list.children[i].classList.remove("elcodd");
+		if(!list.children[i].classList.contains("filtered-out")) // TODO: make this optional in case user doesn't want filtered things removed completely
+			rows.push(list.children[i]);
+	}
+	
+	if(list_container.ELC_current_page <= 0)
+	{
+		for(var i in list_container.ELC_pageup_buttons)
+			list_container.ELC_pageup_buttons[i].classList.remove("active");
+		list_container.ELC_current_page = 0;
 	}
 	else
-		table.find(".pageup").addClass("active");
+		for(var i in list_container.ELC_pageup_buttons)
+			list_container.ELC_pageup_buttons[i].classList.add("active");
 	
-	if(page + 1 >= rows.length / perpage)
+	if(list_container.ELC_current_page + 1 >= rows.length / list_container.ELC_perpage)
 	{
-		table.find(".pagedown").removeClass("active");
-		page = Math.ceil(rows.length/perpage) - 1;
-		table.data("page", page);
+		for(var i in list_container.ELC_pagedown_buttons)
+			list_container.ELC_pagedown_buttons[i].classList.remove("active");
+		list_container.ELC_current_page = Math.ceil(rows.length/list_container.ELC_perpage) - 1;
 	}
 	else
-		table.find(".pagedown").addClass("active");
+		for(var i in list_container.ELC_pagedown_buttons)
+			list_container.ELC_pagedown_buttons[i].classList.add("active");
 	
 	var alt = false;
-	rows.removeClass("paged-out odd even").each(function(i,e){
-		if(i < page*perpage || i >= (page+1)*perpage)
-			$(e).addClass("paged-out");
+	for(var i in rows)
+	{
+		if(i < list_container.ELC_current_page*list_container.ELC_perpage || i >= (list_container.ELC_current_page+1)*list_container.ELC_perpage)
+			rows[i].classList.add("paged-out");
 		else
 		{
-			$(e).addClass(alt ? "even" : "odd");
+			rows[i].classList.add(alt ? "elceven" : "elcodd");
 			alt = !alt;
 		}
-	});
-	table.find(".page").html("Page " + (page+1) + " of " + Math.ceil(rows.length/perpage));
+	}
+	for(var i in list_container.ELC_currentpage_indicators)
+		list_container.ELC_currentpage_indicators[i].innerHTML = (list_container.ELC_current_page+1);
+	for(var i in list_container.ELC_maxpage_indicators)
+		list_container.ELC_maxpage_indicators[i].innerHTML = Math.ceil(rows.length/list_container.ELC_perpage);
 }
 // ---- End paginating functions ----
 
@@ -640,7 +662,7 @@ function ELC_initialize(event)
 				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
 				filters[i].addEventListener("keyup", ELC_filter_change_listener);
 				filters[i].addEventListener("change", ELC_filter_change_listener);
-				ELC_filter_change_listener.call(filters[i]);
+				filters[i].dispatchEvent(new Event('change'));
 			}
 		}
 	}
@@ -650,41 +672,102 @@ function ELC_initialize(event)
 	var pages = document.getElementsByClassName("paged");
 	for(var i = 0; i < pages.length; i++)
 	{
-		pages[i].addEventListener("update", display_page);
-		//$(pages[i]).bind("update", display_page);
-		pages[i].dataset.page = 0;
+		if(pages[i].ELC_current_page == null)
+			pages[i].ELC_current_page = 0;
+		if(pages[i].ELC_pageup_buttons == null)
+			pages[i].ELC_pageup_buttons = [];
+		if(pages[i].ELC_pagedown_buttons == null)
+			pages[i].ELC_pagedown_buttons = [];
+		if(pages[i].ELC_currentpage_indicators == null)
+			pages[i].ELC_currentpage_indicators = [];
+		if(pages[i].ELC_maxpage_indicators == null)
+			pages[i].ELC_maxpage_indicators = [];
 	}
 	
-	$(".paged .pageup").click(function(e){
-		var table = $(this).parents("table").first();
-		if(table.data("page") == 0)
-			return false;
-		else
-			table.data("page", table.data("page")-1);
-		table[0].dispatchEvent(new Event('update'));//.triggerHandler("update");
-	});
-	
-	$(".paged .pagedown").click(function(e){
-		var table = $(this).parents("table").first();
-		if(table.data("page")+1 >= table.children("tbody").children("tr").length / table.data("perpage"))
-			return false;
-		else
-			table.data("page", table.data("page")+1);
-		table[0].dispatchEvent(new Event('update'));//.triggerHandler("update");
-	});
-	
-	$(".paged .perpage").change(function(e){
-		var table = $(this).parents("table").first();
-		var val = parseInt($(this).val());
-		if(val)
-			table.data("perpage", val);
-		else
+	var currentpages = document.getElementsByClassName("page-current");
+	for(var i = 0; i < currentpages.length; i++)
+	{
+		currentpages[i].ELC_list_container = ELC_get_list_container(currentpages[i], "paged", ["page-current", "page-group"]);
+		if(currentpages[i].ELC_list_container != null)
 		{
-			table.data("perpage", 20);
-			$(this).val(20);
+			if(!currentpages[i].ELC_list_container.ELC_currentpage_indicators.includes(currentpages[i]))
+			{
+				currentpages[i].ELC_list_container.ELC_currentpage_indicators.push(currentpages[i]);
+			}
 		}
-		table[0].dispatchEvent(new Event('update'));//.triggerHandler("update");
-	}).change();
+	}
+	
+	var maxpages = document.getElementsByClassName("page-max");
+	for(var i = 0; i < maxpages.length; i++)
+	{
+		maxpages[i].ELC_list_container = ELC_get_list_container(maxpages[i], "paged", ["page-max", "page-group"]);
+		if(maxpages[i].ELC_list_container != null)
+		{
+			if(!maxpages[i].ELC_list_container.ELC_maxpage_indicators.includes(maxpages[i]))
+			{
+				maxpages[i].ELC_list_container.ELC_maxpage_indicators.push(maxpages[i]);
+			}
+		}
+	}
+	
+	var pageups = document.getElementsByClassName("pageup");
+	for(var i = 0; i < pageups.length; i++)
+	{
+		pageups[i].ELC_list_container = ELC_get_list_container(pageups[i], "paged", ["pageup", "page-group"]);
+		if(pageups[i].ELC_list_container != null)
+		{
+			if(!pageups[i].ELC_list_container.ELC_pageup_buttons.includes(pageups[i]))
+			{
+				pageups[i].ELC_list_container.ELC_pageup_buttons.push(pageups[i]);
+				pageups[i].addEventListener("click", function(e){
+					if(this.ELC_list_container.ELC_current_page == 0)
+						return false;
+					else
+						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page-1;
+					ELC_display_page(this.ELC_list_container);
+				});
+			}
+		}
+	}
+	
+	var pagedowns = document.getElementsByClassName("pagedown");
+	for(var i = 0; i < pagedowns.length; i++)
+	{
+		pagedowns[i].ELC_list_container = ELC_get_list_container(pagedowns[i], "paged", ["pagedown", "page-group"]);
+		if(pagedowns[i].ELC_list_container != null)
+		{
+			if(!pagedowns[i].ELC_list_container.ELC_pagedown_buttons.includes(pagedowns[i]))
+			{
+				pagedowns[i].ELC_list_container.ELC_pagedown_buttons.push(pagedowns[i]);
+				pagedowns[i].addEventListener("click", function(e){
+					var list = (this.ELC_list_container.tagName=="TABLE" ? this.ELC_list_container.tBodies[0] : this.ELC_list_container);
+					if(this.ELC_list_container.ELC_current_page+1 >= list.children.length / this.ELC_list_container.ELC_perpage)
+						return false;
+					else
+						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page+1;
+					ELC_display_page(this.ELC_list_container);
+				});
+			}
+		}
+	}
+	
+	var perpages = document.getElementsByClassName("perpage");
+	for(var i = 0; i < perpages.length; i++)
+	{
+		perpages[i].ELC_list_container = ELC_get_list_container(perpages[i], "paged", ["perpage", "page-group"]);
+		if(perpages[i].ELC_list_container != null)
+		{
+			perpages[i].addEventListener("change", function(e){
+				var val = parseInt(this.value);
+				if(val)
+					this.ELC_list_container.ELC_perpage = val;
+				else
+					this.value = this.ELC_list_container.ELC_perpage = 20; // find a way to let the user set the default?
+				ELC_display_page(this.ELC_list_container);
+			});
+			perpages[i].dispatchEvent(new Event('change'));
+		}
+	}
 	// --- End paginating setup
 };
 

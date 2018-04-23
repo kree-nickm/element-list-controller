@@ -3,7 +3,6 @@
 <head>
 <title>Element List Controller Demonstration</title>
 <link rel="stylesheet" type="text/css" href="basic.css"/>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="elc.js"></script>
 </head>
 <body>
@@ -13,7 +12,7 @@
 	<caption>
 		<span class="pageup" style="float:left;">&larr; Previous</span>
 		<span class="pagedown" style="float:right;">Next &rarr;</span>
-		<span class="page"></span>
+		Page <span class="page-current"></span> of <span class="page-max"></span>
 		<span><input class="perpage" type="number" min="1" max="1000" value="4" width="50"/> per page</span>
 		<input class="filter" type="text" placeholder="Search..."/>
 		<span class="filter-list"></span>
@@ -66,7 +65,7 @@
 	<span class="sort" data-field="htmlfield" data-type="text">By Name</span>
 	<span class="sort" data-field="numberfield" data-type="number">By Number</span>
 </div>
-<div id="list_container" class="sortable filtered" data-sort-transition-time="0.5s">
+<div id="list_container" class="sortable filtered paged" data-sort-transition-time="0.5s">
 	<div id="a" data-textfield-value="Foxtrot">
 		<span name="htmlfield"><b>Jim</b></span>
 		<span name="numberfield" data-value="3">Three</span>
@@ -94,6 +93,10 @@
 <input class="filter" data-container="list_container" data-field="htmlfield" name="htmlfield" type="radio" value="e"/>
 <input class="filter" data-container="list_container" name="htmlfield" type="radio" value=""/>
 <span class="filter-list" data-container="list_container"></span>
+<span class="pageup" data-container="list_container">&larr; Previous</span>
+<span class="pagedown" data-container="list_container">Next &rarr;</span>
+Page <span class="page-current" data-container="list_container"></span> of <span class="page-max" data-container="list_container"></span>
+<span><input class="perpage" data-container="list_container" type="number" min="1" max="1000" value="5" width="50"/> per page</span>
 
 </body>
 </html>
