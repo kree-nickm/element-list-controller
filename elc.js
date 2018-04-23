@@ -1,3 +1,4 @@
+var ELC_debug_mode = false;
 Element.prototype.getFirstElementByName = function(name)
 {
 	for(var i = 0; i < this.children.length; i++)
@@ -284,9 +285,9 @@ function ELC_apply_filter(list_container)
 					//if(list_container.ELC_current_sort_type == "number")
 					//	var text = parseFloat(list.children[i].children[filter_columns[k]].innerText);
 					//else if(list_container.ELC_current_sort_type == "html")
-					//	var text = list.children[i].children[filter_columns[k]].innerHTML.toLowerCase();
+					//	var text = list.children[i].children[filter_columns[k]].innerHTML;
 					//else
-						var text = list.children[i].children[filter_columns[k]].innerText.toLowerCase();
+						var text = list.children[i].children[filter_columns[k]].innerText;
 				}
 				else
 				{
@@ -308,7 +309,8 @@ function ELC_apply_filter(list_container)
 				}
 			}
 			else
-				var text = list.children[i].textContent.toLowerCase();
+				var text = list.children[i].textContent;
+			text = text.toLowerCase();
 			
 			var and_clause = true;
 			if(column_filters_and[k] && column_filters_and[k].length > 0)
@@ -370,6 +372,8 @@ function ELC_apply_filter(list_container)
 					}
 				}
 			}
+			
+			if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, andFilters:column_filters_and[k], orFilters:column_filters_or[k], notFilters:column_filters_not[k], andResult:and_clause, orResult:or_clause, notResult:not_clause});
 			
 			if(!and_clause || !or_clause || !not_clause)
 			{
