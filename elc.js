@@ -615,6 +615,15 @@ function ELC_initialize(event)
 		}
 	}
 	
+	var filter_lists = document.getElementsByClassName("filter-list");
+	for(var i = 0; i < filter_lists.length; i++)
+	{
+		filter_lists[i].ELC_list_container = ELC_get_list_container(filter_lists[i], "filtered", ["filter-list", "filter-group"]);
+		if(filter_lists[i].ELC_list_container != null)
+			if(filter_lists[i].ELC_list_container.ELC_filter_list != filter_lists[i])
+				filter_lists[i].ELC_list_container.ELC_filter_list = filter_lists[i];
+	}
+	
 	var filters = document.getElementsByClassName("filter");
 	for(var i = 0; i < filters.length; i++)
 	{
@@ -634,15 +643,6 @@ function ELC_initialize(event)
 				ELC_filter_change_listener.call(filters[i]);
 			}
 		}
-	}
-	
-	var filter_lists = document.getElementsByClassName("filter-list");
-	for(var i = 0; i < filter_lists.length; i++)
-	{
-		filter_lists[i].ELC_list_container = ELC_get_list_container(filter_lists[i], "filtered", ["filter-list", "filter-group"]);
-		if(filter_lists[i].ELC_list_container != null)
-			if(filter_lists[i].ELC_list_container.ELC_filter_list != filter_lists[i])
-				filter_lists[i].ELC_list_container.ELC_filter_list = filter_lists[i];
 	}
 	// --- End filtering setup
 	
