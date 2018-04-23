@@ -14,8 +14,10 @@ Element.prototype.getFirstElementByName = function(name)
 
 function ELC_update(list_container)
 {
+	// TODO: either here or in these methods, don't attempt the method if they don't have the appropriate class
 	ELC_sort_list(list_container);
-	list_container.dispatchEvent(new Event('update'));
+	ELC_apply_filter(list_container);
+	// ELC_page()
 }
 
 function ELC_element_added(mutationList)
@@ -32,6 +34,26 @@ function ELC_element_added(mutationList)
 				ELC_update(mutationList[i].target);
 		}
 	}
+}
+
+function ELC_get_list_container(current, containerClass, myClasses)
+{
+	do {
+		if(current.classList.contains(containerClass))
+			return current;
+		else if(current.dataset.container != null)
+		{
+			for(var i in myClasses)
+			{
+				if(current.classList.contains(myClasses[i]))
+					var result = document.getElementById(current.dataset.container);
+				if(result != null && result.classList.contains(containerClass))
+					return result;
+			}
+		}
+		current = current.parentElement;
+	} while(current != null);
+	return null;
 }
 
 // ---- Begin sorting functions ----
@@ -60,7 +82,6 @@ function ELC_sort_event_listener(event)
 		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
 	ELC_sort_list(this.ELC_list_container);
-	this.ELC_list_container.dispatchEvent(new Event('update'));
 }
 
 function ELC_sort_list(list_container)
@@ -148,6 +169,7 @@ function ELC_sort_list(list_container)
 			}
 		}
 	}
+	// ELC_page
 	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
@@ -185,67 +207,41 @@ function ELC_compare(a, b, container)
 	else
 		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
 }
-
-function ELC_get_sort_parent(current)
-{
-	do {
-		if(current.classList.contains("sortable"))
-			return current;
-		else if((current.classList.contains("sort") || current.classList.contains("sorter")) && current.dataset.container != null)
-			return document.getElementById(current.dataset.container);
-		current = current.parentElement;
-	} while(current != null);
-	return null;
-}
 // ---- End sorting functions ----
 
 // ---- Begin filtering functions ----
-function apply_filter(event)
+function ELC_apply_filter(list_container)
 {
-	var table = $(event.target);
+	// Parse the filter inputs into these arrays for processing
 	var column_filters_and = {};
 	var column_filters_or = {};
 	var column_filters_not = {};
-	$(".filter").each(function(i,e){
-		if($(e).data("table"))
-			var mytable = $($(e).data("table"));
-		else
-			var mytable = $(e).parents(".filtered").first();
-		if(mytable.index(event.target) == -1)
-			return;
-		
-		if($(e).data("column"))
-		{
-			if($(e).data("column").substr(0,5) == "data:")
-				var column = $(e).data("column");
-			else
-				var column = $(e).data("column").toLowerCase();
-		}
-		else
-			var column = "";
-		if(!column_filters_and[column])
-			column_filters_and[column] = [];
-		if(!column_filters_or[column])
-			column_filters_or[column] = [];
-		if(!column_filters_not[column])
-			column_filters_not[column] = [];
-		switch($(e).attr("type"))
+	for(var i = 0; i < list_container.ELC_list_filters.length; i++)
+	{
+		if(!column_filters_and[list_container.ELC_list_filters[i].ELC_field])
+			column_filters_and[list_container.ELC_list_filters[i].ELC_field] = [];
+		if(!column_filters_or[list_container.ELC_list_filters[i].ELC_field])
+			column_filters_or[list_container.ELC_list_filters[i].ELC_field] = [];
+		if(!column_filters_not[list_container.ELC_list_filters[i].ELC_field])
+			column_filters_not[list_container.ELC_list_filters[i].ELC_field] = [];
+		var type = (list_container.ELC_list_filters[i].attributes.type!=null ? list_container.ELC_list_filters[i].attributes.type.textContent : "");
+		switch(type)
 		{
 			case "checkbox":
-				if($(e).filter(":checked").length > 0 && $(e).val().length > 0)
-					column_filters_or[column].push($(e).val());
+				if(list_container.ELC_list_filters[i].checked && list_container.ELC_list_filters[i].value.length > 0)
+					column_filters_or[list_container.ELC_list_filters[i].ELC_field].push(list_container.ELC_list_filters[i].value);
 				break;
 			case "radio":
-				if($(e).filter(":checked").length > 0 && $(e).val().length > 0)
-					column_filters_and[column].push($(e).val());
+				if(list_container.ELC_list_filters[i].checked && list_container.ELC_list_filters[i].value.length > 0)
+					column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(list_container.ELC_list_filters[i].value);
 				break;
 			case "number":
-				if($(e).val().length > 0)
-					column_filters_and[column].push($(e).val());
+				if(list_container.ELC_list_filters[i].value.length > 0)
+					column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(list_container.ELC_list_filters[i].value);
 				break;
 			case "text":
 			case "":
-				var string = $(e).val();
+				var string = list_container.ELC_list_filters[i].value;
 				if(string)
 				{
 					var strings = string.split(" ");
@@ -253,72 +249,83 @@ function apply_filter(event)
 					{
 						if(strings[s][0] == "+" && strings[s].length > 1)
 						{
-							column_filters_and[column].push(strings[s].substr(1));
+							column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
 						}
 						else if(strings[s][0] == "|" && strings[s].length > 1)
 						{
-							column_filters_or[column].push(strings[s].substr(1));
+							column_filters_or[list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
 						}
 						else if(strings[s][0] == "-" && strings[s].length > 1)
 						{
-							column_filters_not[column].push(strings[s].substr(1));
+							column_filters_not[list_container.ELC_list_filters[i].ELC_field].push(strings[s].substr(1));
 						}
 						else if(strings[s].length > 0)
 						{
-							column_filters_and[column].push(strings[s]);
+							column_filters_and[list_container.ELC_list_filters[i].ELC_field].push(strings[s]);
 						}
 					}
 				}
 				break;
 		}
-	});
-	var rows = table.children("tbody").children("tr");
-	rows.removeClass("filtered-out");
-	rows.each(function(i,e){
+	}
+	// Parsing complete, now check each element to see if the filters apply.
+	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
+	list.ELC_MutationObserver.disconnect();
+	for(var i = 0; i < list.children.length; i++)
+	{
+		list.children[i].classList.remove("filtered-out");
 		for(var k in column_filters_and) // & column_filters_or & column_filters_not - they should all have the same keys
 		{
-			var is_attr = false;
+			// k is either "" for a filter that applies to all text in the element, or the identifier of the data to be matched against
 			if(k)
 			{
-				if(k.substr(0,5) == "data:")
+				if(list.children[i].tagName == "TR")
 				{
-					var text = $(e).data(k.substr(5));
-					is_attr = true;
+					//if(list_container.ELC_current_sort_type == "number")
+					//	var text = parseFloat(list.children[i].children[filter_columns[k]].innerText);
+					//else if(list_container.ELC_current_sort_type == "html")
+					//	var text = list.children[i].children[filter_columns[k]].innerHTML.toLowerCase();
+					//else
+						var text = list.children[i].children[filter_columns[k]].innerText.toLowerCase();
 				}
 				else
-					var text = $(e).children("td, th").eq(filter_columns[k]).html().toLowerCase();
+				{
+					if(list.children[i].dataset[k+"Value"] != null)
+						var string = list.children[i].dataset[k+"Value"];
+					else
+					{
+						var element = list.children[i].getFirstElementByName(k);
+						if(element != null)
+							//var string = (element.dataset.value!=null ? element.dataset.value : (list_container.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
+							var string = element.innerText;
+						else
+							var string = "";
+					}
+					//if(list_container.ELC_current_sort_type == "number")
+					//	var text = parseFloat(string);
+					//else
+						var text = string;
+				}
 			}
 			else
-				var text = $(e).html().toLowerCase();
+				var text = list.children[i].textContent.toLowerCase();
 			
 			var and_clause = true;
 			if(column_filters_and[k] && column_filters_and[k].length > 0)
 			{
 				for(var j in column_filters_and[k])
 				{
-					if(is_attr)
+					try // There should be no blank strings in the array, but just in case...
 					{
-						//console.log("and:"+ k +"["+ j +"] = "+ column_filters_and[k][j] +" :: "+ (text == column_filters_and[k][j]));
-						if(text != column_filters_and[k][j])
+						if(text.indexOf(column_filters_and[k][j].toLowerCase()) == -1)
 						{
 							and_clause = false;
 							break;
 						}
 					}
-					else
+					catch(err)
 					{
-						try // There should be no blank strings in the array, but just in case...
-						{
-							if(text.indexOf(column_filters_and[k][j].toLowerCase()) == -1)
-							{
-								and_clause = false;
-								break;
-							}
-						}
-						catch(err)
-						{
-							console.log(err);
-						}
+						console.log(err);
 					}
 				}
 			}
@@ -329,30 +336,17 @@ function apply_filter(event)
 				or_clause = false;
 				for(var j in column_filters_or[k])
 				{
-					if(is_attr)
+					try // There should be no blank strings in the array, but just in case...
 					{
-						//console.log("or:"+ k +"["+ j +"] = "+ column_filters_or[k][j] +" :: "+ (text == column_filters_or[k][j]));
-						if(text == column_filters_or[k][j])
+						if(text.indexOf(column_filters_or[k][j].toLowerCase()) != -1)
 						{
-							console.log(k +": "+ or_clause);
 							or_clause = true;
 							break;
 						}
 					}
-					else
+					catch(err)
 					{
-						try // There should be no blank strings in the array, but just in case...
-						{
-							if(text.indexOf(column_filters_or[k][j].toLowerCase()) != -1)
-							{
-								or_clause = true;
-								break;
-							}
-						}
-						catch(err)
-						{
-							console.log(err);
-						}
+						console.log(err);
 					}
 				}
 			}
@@ -362,81 +356,90 @@ function apply_filter(event)
 			{
 				for(var j in column_filters_not[k])
 				{
-					if(is_attr)
+					try // There should be no blank strings in the array, but just in case...
 					{
-						//console.log("not:"+ k +"["+ j +"] = "+ column_filters_not[k][j] +" :: "+ (text != column_filters_not[k][j]));
-						if(text == column_filters_not[k][j])
+						if(text.indexOf(column_filters_not[k][j].toLowerCase()) != -1)
 						{
 							not_clause = false;
 							break;
 						}
 					}
-					else
+					catch(err)
 					{
-						try // There should be no blank strings in the array, but just in case...
-						{
-							if(text.indexOf(column_filters_not[k][j].toLowerCase()) != -1)
-							{
-								not_clause = false;
-								break;
-							}
-						}
-						catch(err)
-						{
-							console.log(err);
-						}
+						console.log(err);
 					}
 				}
 			}
 			
 			if(!and_clause || !or_clause || !not_clause)
 			{
-				$(e).addClass("filtered-out");
+				list.children[i].classList.add("filtered-out");
 				break;
 			}
 		}
-	});
-	if($(".filter-list").length)
+	}
+	if(list_container.ELC_filter_list != null)
 	{
-		$(".filter-list").html("");
+		list_container.ELC_filter_list.innerHTML = "";
 		for(var i in column_filters_and)
 			if(column_filters_and[i].length > 0)
 				for(var k in column_filters_and[i])
-					$(".filter-list").append("<span class='filter-and' data-column='"+ i +"' data-value='"+ column_filters_and[i][k] +"'>"+ (i?i+":":"") + column_filters_and[i][k] +"</span>");
+				{
+					var span = document.createElement("span");
+					span.classList.add("filter-and");
+					span.dataset.field = i;
+					span.dataset.value = column_filters_and[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + column_filters_and[i][k]));
+					span.addEventListener("click", remove_filter);
+					list_container.ELC_filter_list.appendChild(span);
+				}
 		for(var i in column_filters_or)
 			if(column_filters_or[i].length > 0)
 				for(var k in column_filters_or[i])
-					$(".filter-list").append("<span class='filter-or' data-column='"+ i +"' data-value='"+ column_filters_or[i][k] +"'>"+ (i?i+":":"") + column_filters_or[i][k] +"</span>");
+				{
+					var span = document.createElement("span");
+					span.classList.add("filter-or");
+					span.dataset.field = i;
+					span.dataset.value = column_filters_or[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + column_filters_or[i][k]));
+					span.addEventListener("click", remove_filter);
+					list_container.ELC_filter_list.appendChild(span);
+				}
 		for(var i in column_filters_not)
 			if(column_filters_not[i].length > 0)
 				for(var k in column_filters_not[i])
-					$(".filter-list").append("<span class='filter-not' data-column='"+ i +"' data-value='"+ column_filters_not[i][k] +"'>"+ (i?i+":":"") + column_filters_not[i][k] +"</span>");
-		$(".filter-list *").click(remove_filter);
+				{
+					var span = document.createElement("span");
+					span.classList.add("filter-not");
+					span.dataset.field = i;
+					span.dataset.value = column_filters_not[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + column_filters_not[i][k]));
+					span.addEventListener("click", remove_filter);
+					list_container.ELC_filter_list.appendChild(span);
+				}
 	}
+	// ELC_page
+	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
 var filter_delay = setTimeout(function(){}, 1);
-function filter_changed(e)
+function ELC_filter_change_listener(e)
 {
 	clearTimeout(filter_delay);
-	if($(this).data("table"))
-		var table = $($(this).data("table"));
-	else
-		var table = $(this).parents(".filtered").first();
-	if(table.length == 0)
+	if(this.ELC_list_container == null)
 	{
 		console.log("Cannot find the table this filter is meant to apply to: "+ $(this));
 		return false;
 	}
 	if(e != null && e.type == "keyup") // Give user some "time" to finish typing.
-		filter_delay = setTimeout(function(t){t.triggerHandler("update");}, 250, table);
+		filter_delay = setTimeout(function(c){ELC_apply_filter(c)}, 250, this.ELC_list_container);
 	else
-		table.triggerHandler("update");
+		ELC_apply_filter(this.ELC_list_container);
 }
 
 function remove_filter(e)
 {
-	console.log($(this).parentsUntil(".filter-list"));
+	console.log(e);
 }
 // ---- End filtering functions ----
 
@@ -505,8 +508,8 @@ function ELC_initialize(event)
 		}
 		for(var k in sortables[i].ELC_list_sorters)
 		{
-			// TODO: Fix this: ELC_get_sort_parent gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
-			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_get_sort_parent(sortables[i].ELC_list_sorters[k]);
+			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
+			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_get_list_container(sortables[i].ELC_list_sorters[k], "sortable", ["sort", "sorter"]);
 			if(sortables[i].ELC_list_sorters[k].ELC_list_container != sortables[i])
 			{
 				sortables[i].ELC_list_sorters[k].removeEventListener("click", ELC_sort_event_listener);
@@ -518,7 +521,7 @@ function ELC_initialize(event)
 	var sorts = document.getElementsByClassName("sort");
 	for(var i = 0; i < sorts.length; i++)
 	{
-		sorts[i].ELC_list_container = ELC_get_sort_parent(sorts[i]);
+		sorts[i].ELC_list_container = ELC_get_list_container(sorts[i], "sortable", ["sort", "sorter"]);
 		if(sorts[i].ELC_list_container != null)
 		{
 			if(sorts[i].ELC_list_container.tagName == "TABLE")
@@ -567,25 +570,75 @@ function ELC_initialize(event)
 	var filterables = document.getElementsByClassName("filtered");
 	for(var i = 0; i < filterables.length; i++)
 	{
-		//filterables[i].addEventListener("update", apply_filter);
-		$(filterables[i]).bind("update", apply_filter);
-		var filter_fields = filterables[i].getElementsByClassName("filterable");
-		for(var k = 0; k < filter_fields.length; k++)
+		if(filterables[i].ELC_list_filters == null)
+			filterables[i].ELC_list_filters = [];
+		if(filterables[i].style.position == "static")
+			filterables[i].style.position = "relative";
+		if(filterables[i].tagName == "TABLE")
 		{
-			// May need to fix .cellIndex here like we did in the sorting code
-			if(filter_fields[k].dataset.column != null)
-				filter_columns[filter_fields[k].dataset.column.toLowerCase()] = filter_fields[k].cellIndex;
-			else
-				filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
+			if(filterables[i].tBodies[0].ELC_MutationObserver == null)
+				filterables[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+			filterables[i].tBodies[0].ELC_MutationObserver.observe(filterables[i], {childList:true});
+		}
+		else
+		{
+			if(filterables[i].ELC_MutationObserver == null)
+				filterables[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+			filterables[i].ELC_MutationObserver.observe(filterables[i], {childList:true});
+		}
+		for(var k in filterables[i].ELC_list_filters)
+		{
+			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
+			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_get_list_container(filterables[i].ELC_list_filters[k], "filtered", ["filter", "filter-group"]);
+			if(filterables[i].ELC_list_filters[k].ELC_list_container != filterables[i])
+			{
+				filterables[i].ELC_list_filters[k].removeEventListener("keyup", ELC_filter_change_listener);
+				filterables[i].ELC_list_filters[k].removeEventListener("change", ELC_filter_change_listener);
+				delete filterables[i].ELC_list_filters[k];
+			}
+		}
+		if(filterables[i].tagName == "TABLE")
+		{
+			var filter_fields = filterables[i].getElementsByClassName("filterable");
+			for(var k = 0; k < filter_fields.length; k++)
+			{
+				// May need to fix .cellIndex here like we did in the sorting code
+				if(filter_fields[k].dataset.field != null)
+					filter_columns[filter_fields[k].dataset.field.toLowerCase()] = filter_fields[k].cellIndex;
+				else
+					filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
+			}
 		}
 	}
 	
 	var filters = document.getElementsByClassName("filter");
 	for(var i = 0; i < filters.length; i++)
 	{
-		filters[i].addEventListener("keyup", filter_changed);
-		filters[i].addEventListener("change", filter_changed);
-		filter_changed.call(filters[i]);
+		filters[i].ELC_list_container = ELC_get_list_container(filters[i], "filtered", ["filter", "filter-group"]);
+		if(filters[i].ELC_list_container != null)
+		{
+			if(filters[i].dataset.field != null)
+				filters[i].ELC_field = filters[i].dataset.field;
+			else
+				filters[i].ELC_field = "";
+			
+			if(!filters[i].ELC_list_container.ELC_list_filters.includes(filters[i]))
+			{
+				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
+				filters[i].addEventListener("keyup", ELC_filter_change_listener);
+				filters[i].addEventListener("change", ELC_filter_change_listener);
+				ELC_filter_change_listener.call(filters[i]);
+			}
+		}
+	}
+	
+	var filter_lists = document.getElementsByClassName("filter-list");
+	for(var i = 0; i < filter_lists.length; i++)
+	{
+		filter_lists[i].ELC_list_container = ELC_get_list_container(filter_lists[i], "filtered", ["filter-list", "filter-group"]);
+		if(filter_lists[i].ELC_list_container != null)
+			if(filter_lists[i].ELC_list_container.ELC_filter_list != filter_lists[i])
+				filter_lists[i].ELC_list_container.ELC_filter_list = filter_lists[i];
 	}
 	// --- End filtering setup
 	
@@ -593,8 +646,8 @@ function ELC_initialize(event)
 	var pages = document.getElementsByClassName("paged");
 	for(var i = 0; i < pages.length; i++)
 	{
-		//pages[i].addEventListener("update", display_page);
-		$(pages[i]).bind("update", display_page);
+		pages[i].addEventListener("update", display_page);
+		//$(pages[i]).bind("update", display_page);
 		pages[i].dataset.page = 0;
 	}
 	
@@ -604,7 +657,7 @@ function ELC_initialize(event)
 			return false;
 		else
 			table.data("page", table.data("page")-1);
-		table.triggerHandler("update");
+		table[0].dispatchEvent(new Event('update'));//.triggerHandler("update");
 	});
 	
 	$(".paged .pagedown").click(function(e){
@@ -613,7 +666,7 @@ function ELC_initialize(event)
 			return false;
 		else
 			table.data("page", table.data("page")+1);
-		table.triggerHandler("update");
+		table[0].dispatchEvent(new Event('update'));//.triggerHandler("update");
 	});
 	
 	$(".paged .perpage").change(function(e){
@@ -626,7 +679,7 @@ function ELC_initialize(event)
 			table.data("perpage", 20);
 			$(this).val(20);
 		}
-		table.triggerHandler("update");
+		table[0].dispatchEvent(new Event('update'));//.triggerHandler("update");
 	}).change();
 	// --- End paginating setup
 };

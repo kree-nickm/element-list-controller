@@ -17,8 +17,8 @@
 	content: "\2193";
 }
 
-.filtered .filtered-out {
-	display: none;
+.filtered-out {
+	display: none !important;
 }
 
 .filter-list * {
@@ -38,8 +38,8 @@
 	background-color: rgba(255,150,150,0.8);
 }
 
-.paged .paged-out {
-	display: none;
+.paged-out {
+	display: none !important;
 }
 
 .pageup,
