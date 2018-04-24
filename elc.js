@@ -382,8 +382,7 @@ function ELC_filter_change_listener_step2(e)
 			this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field] = [];
 		if(!this.ELC_list_container.ELC_active_filters.not[this.ELC_list_container.ELC_list_filters[i].ELC_field])
 			this.ELC_list_container.ELC_active_filters.not[this.ELC_list_container.ELC_list_filters[i].ELC_field] = [];
-		var type = (this.ELC_list_container.ELC_list_filters[i].attributes.type!=null ? this.ELC_list_container.ELC_list_filters[i].attributes.type.textContent : "");
-		switch(type)
+		switch(this.ELC_list_container.ELC_list_filters[i].type)
 		{
 			case "checkbox":
 				if(this.ELC_list_container.ELC_list_filters[i].checked && this.ELC_list_container.ELC_list_filters[i].value.length > 0)
@@ -394,11 +393,16 @@ function ELC_filter_change_listener_step2(e)
 					this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].value);
 				break;
 			case "number":
+			case "select-one":
 				if(this.ELC_list_container.ELC_list_filters[i].value.length > 0)
 					this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].value);
 				break;
+			case "select-multiple":
+				for(var k = 0; k < this.ELC_list_container.ELC_list_filters[i].selectedOptions.length; k++)
+					if(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value.length > 0)
+						this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value);
+				break;
 			case "text":
-			case "":
 				var string = this.ELC_list_container.ELC_list_filters[i].value;
 				if(string)
 				{
@@ -424,6 +428,8 @@ function ELC_filter_change_listener_step2(e)
 					}
 				}
 				break;
+			default:
+				console.log("No filter processing available for element of type: "+ this.ELC_list_container.ELC_list_filters[i].type);
 		}
 	}
 	// TODO: save the created elements and don't recreate them if they haven't changed

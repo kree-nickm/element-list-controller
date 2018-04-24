@@ -8,8 +8,9 @@
 ELC_addHook("before_update", function(){console.log(this);});
 </script>
 <style>
-#list_container {
+#list_container, div.filter-group, div.page-group {
 	width: 50%;
+	margin: 1ex;
 }
 
 #list_container, #list_container>div {
@@ -121,16 +122,22 @@ div.sorter .sort {
 		<span name="numberfield" data-value="4">Four</span>
 	</div>
 </div>
-<input class="filter" data-container="list_container" placeholder="Search all..."/>
-<input class="filter" data-container="list_container" data-field="htmlfield" placeholder="Search name..."/>
-<input class="filter" data-container="list_container" data-field="numberfield" type="checkbox" value="e"/>
-<input class="filter" data-container="list_container" data-field="htmlfield" name="htmlfield" type="radio" value="e"/>
-<input class="filter" data-container="list_container" name="htmlfield" type="radio" value=""/>
-<span class="filter-list" data-container="list_container"></span>
-<span class="pageup" data-container="list_container">&larr; Previous</span>
-<span class="pagedown" data-container="list_container">Next &rarr;</span>
-Page <span class="page-current" data-container="list_container"></span> of <span class="page-max" data-container="list_container"></span>
-<span><input class="perpage" data-container="list_container" type="number" min="1" max="1000" value="5" width="50"/> per page</span>
+<div class="filter-group" data-container="list_container">
+	<input class="filter" placeholder="Search all..."/>
+	<input class="filter" type="text" data-field="htmlfield" placeholder="Search name..."/>
+	Number contains "e":<input class="filter" data-field="numberfield" type="checkbox" value="e"/>
+	|| Name contains "e": Yes<input class="filter" data-field="htmlfield" name="htmlfield" type="radio" value="e"/>
+	| No<input class="filter" name="htmlfield" type="radio" value=""/>
+	<select class="filter" data-field="textfield"><option value="">Select attribute text...</option><option>Alpha</option><option>Charlie</option><option>Foxtrot</option><option>Tango</option><option>Whiskey</option></select>
+	<select class="filter" data-field="textfield" multiple><option>Alpha</option><option>Charlie</option><option>Foxtrot</option><option>Tango</option><option>Whiskey</option></select>
+	<span class="filter-list"></span>
+</div>
+<div class="page-group" data-container="list_container">
+	<span class="pageup">&larr; Previous</span>
+	<span class="pagedown">Next &rarr;</span>
+	Page <span class="page-current"></span> of <span class="page-max"></span>
+	<span><input class="perpage" type="number" min="1" max="1000" value="5" width="50"/> per page</span>
+</div>
 
 </body>
 </html>
