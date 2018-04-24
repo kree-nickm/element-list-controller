@@ -220,7 +220,6 @@ function ELC_apply_filter(list_container)
 	if(list_container.ELC_list_filters == null)
 		return;
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
-	list.ELC_MutationObserver.disconnect();
 	for(var i = 0; i < list.children.length; i++)
 	{
 		list.children[i].classList.remove("filtered-out");
@@ -331,52 +330,10 @@ function ELC_apply_filter(list_container)
 			}
 		}
 	}
-	// TODO: save the created elements and don't recreate them if they haven't changed, also move this to the event handler
-	if(list_container.ELC_filter_list != null)
-	{
-		list_container.ELC_filter_list.innerHTML = "";
-		for(var i in list_container.ELC_active_filters.and)
-			if(list_container.ELC_active_filters.and[i].length > 0)
-				for(var k in list_container.ELC_active_filters.and[i])
-				{
-					var span = document.createElement("span");
-					span.classList.add("filter-and");
-					span.dataset.field = i;
-					span.dataset.value = list_container.ELC_active_filters.and[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + list_container.ELC_active_filters.and[i][k]));
-					span.addEventListener("click", remove_filter);
-					list_container.ELC_filter_list.appendChild(span);
-				}
-		for(var i in list_container.ELC_active_filters.or)
-			if(list_container.ELC_active_filters.or[i].length > 0)
-				for(var k in list_container.ELC_active_filters.or[i])
-				{
-					var span = document.createElement("span");
-					span.classList.add("filter-or");
-					span.dataset.field = i;
-					span.dataset.value = list_container.ELC_active_filters.or[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + list_container.ELC_active_filters.or[i][k]));
-					span.addEventListener("click", remove_filter);
-					list_container.ELC_filter_list.appendChild(span);
-				}
-		for(var i in list_container.ELC_active_filters.not)
-			if(list_container.ELC_active_filters.not[i].length > 0)
-				for(var k in list_container.ELC_active_filters.not[i])
-				{
-					var span = document.createElement("span");
-					span.classList.add("filter-not");
-					span.dataset.field = i;
-					span.dataset.value = list_container.ELC_active_filters.not[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + list_container.ELC_active_filters.not[i][k]));
-					span.addEventListener("click", remove_filter);
-					list_container.ELC_filter_list.appendChild(span);
-				}
-	}
 	ELC_display_page(list_container);
-	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
-var filter_delay = setTimeout(function(){}, 1);
+var filter_delay = setTimeout(function(){}, 1); // TODO: make this an object property
 function ELC_filter_change_listener(e)
 {
 	clearTimeout(filter_delay);
@@ -393,6 +350,7 @@ function ELC_filter_change_listener(e)
 
 function ELC_filter_change_listener_step2(e)
 {
+	// TODO: save the current filters instead of rebuild from scratch if they haven't changed
 	this.ELC_list_container.ELC_active_filters = {
 		and: {},
 		or: {},
@@ -449,6 +407,47 @@ function ELC_filter_change_listener_step2(e)
 				}
 				break;
 		}
+	}
+	// TODO: save the created elements and don't recreate them if they haven't changed
+	if(this.ELC_list_container.ELC_filter_list != null)
+	{
+		this.ELC_list_container.ELC_filter_list.innerHTML = "";
+		for(var i in this.ELC_list_container.ELC_active_filters.and)
+			if(this.ELC_list_container.ELC_active_filters.and[i].length > 0)
+				for(var k in this.ELC_list_container.ELC_active_filters.and[i])
+				{
+					var span = document.createElement("span");
+					span.classList.add("filter-and");
+					span.dataset.field = i;
+					span.dataset.value = this.ELC_list_container.ELC_active_filters.and[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + this.ELC_list_container.ELC_active_filters.and[i][k]));
+					span.addEventListener("click", remove_filter);
+					this.ELC_list_container.ELC_filter_list.appendChild(span);
+				}
+		for(var i in this.ELC_list_container.ELC_active_filters.or)
+			if(this.ELC_list_container.ELC_active_filters.or[i].length > 0)
+				for(var k in this.ELC_list_container.ELC_active_filters.or[i])
+				{
+					var span = document.createElement("span");
+					span.classList.add("filter-or");
+					span.dataset.field = i;
+					span.dataset.value = this.ELC_list_container.ELC_active_filters.or[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + this.ELC_list_container.ELC_active_filters.or[i][k]));
+					span.addEventListener("click", remove_filter);
+					this.ELC_list_container.ELC_filter_list.appendChild(span);
+				}
+		for(var i in this.ELC_list_container.ELC_active_filters.not)
+			if(this.ELC_list_container.ELC_active_filters.not[i].length > 0)
+				for(var k in this.ELC_list_container.ELC_active_filters.not[i])
+				{
+					var span = document.createElement("span");
+					span.classList.add("filter-not");
+					span.dataset.field = i;
+					span.dataset.value = this.ELC_list_container.ELC_active_filters.not[i][k];
+					span.appendChild(document.createTextNode((i?i+":":"") + this.ELC_list_container.ELC_active_filters.not[i][k]));
+					span.addEventListener("click", remove_filter);
+					this.ELC_list_container.ELC_filter_list.appendChild(span);
+				}
 	}
 	ELC_apply_filter(this.ELC_list_container);
 }
@@ -513,7 +512,7 @@ function ELC_display_page(list_container)
 }
 // ---- End paginating functions ----
 
-var filter_columns = {};
+var filter_columns = {}; // TODO: make this an object property
 function ELC_initialize(event)
 {
 	// --- Begin sorting setup
