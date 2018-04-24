@@ -439,42 +439,31 @@ function ELC_filter_change_listener_step2(e)
 		for(var i in this.ELC_list_container.ELC_active_filters.and)
 			if(this.ELC_list_container.ELC_active_filters.and[i].length > 0)
 				for(var k in this.ELC_list_container.ELC_active_filters.and[i])
-				{
-					var span = document.createElement("span");
-					span.classList.add("filter-and");
-					span.dataset.field = i;
-					span.dataset.value = this.ELC_list_container.ELC_active_filters.and[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + this.ELC_list_container.ELC_active_filters.and[i][k]));
-					span.addEventListener("click", remove_filter);
-					this.ELC_list_container.ELC_filter_list.appendChild(span);
-				}
+					ELC_create_filter_list_element("and", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.and[i][k]);
 		for(var i in this.ELC_list_container.ELC_active_filters.or)
 			if(this.ELC_list_container.ELC_active_filters.or[i].length > 0)
 				for(var k in this.ELC_list_container.ELC_active_filters.or[i])
-				{
-					var span = document.createElement("span");
-					span.classList.add("filter-or");
-					span.dataset.field = i;
-					span.dataset.value = this.ELC_list_container.ELC_active_filters.or[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + this.ELC_list_container.ELC_active_filters.or[i][k]));
-					span.addEventListener("click", remove_filter);
-					this.ELC_list_container.ELC_filter_list.appendChild(span);
-				}
+					ELC_create_filter_list_element("or", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.or[i][k]);
 		for(var i in this.ELC_list_container.ELC_active_filters.not)
 			if(this.ELC_list_container.ELC_active_filters.not[i].length > 0)
 				for(var k in this.ELC_list_container.ELC_active_filters.not[i])
-				{
-					var span = document.createElement("span");
-					span.classList.add("filter-not");
-					span.dataset.field = i;
-					span.dataset.value = this.ELC_list_container.ELC_active_filters.not[i][k];
-					span.appendChild(document.createTextNode((i?i+":":"") + this.ELC_list_container.ELC_active_filters.not[i][k]));
-					span.addEventListener("click", remove_filter);
-					this.ELC_list_container.ELC_filter_list.appendChild(span);
-				}
+					ELC_create_filter_list_element("not", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.not[i][k]);
 	}
 	if(e.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "filter");
+}
+
+function ELC_create_filter_list_element(filter_type, list_container, field, value)
+{
+	var span = document.createElement("span");
+	span.classList.add("filter-"+ filter_type);
+	span.ELC_list_container = list_container;
+	span.ELC_type = filter_type;
+	span.ELC_field = field;
+	span.ELC_value = value;
+	span.appendChild(document.createTextNode((field ? field+":" : "") + value));
+	span.addEventListener("click", remove_filter);
+	list_container.ELC_filter_list.appendChild(span);
 }
 
 function remove_filter(e)
