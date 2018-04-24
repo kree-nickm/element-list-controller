@@ -30,14 +30,14 @@ function ELC_update(list_container, type)
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	list.ELC_MutationObserver.disconnect();
 	for(var i in ELC_hooks.before_update)
-		ELC_hooks.before_update[i].callback.apply(this, ELC_hooks.before_update[i].params);
+		ELC_hooks.before_update[i].callback.apply(list_container, ELC_hooks.before_update[i].params);
 	if(type != "page" && type != "filter")
 		ELC_sort_list(list_container);
 	if(type != "page" && type != "sort")
 		ELC_apply_filter(list_container);
 	ELC_display_page(list_container);
 	for(var i in ELC_hooks.after_update)
-		ELC_hooks.after_update[i].callback.apply(this, ELC_hooks.after_update[i].params);
+		ELC_hooks.after_update[i].callback.apply(list_container, ELC_hooks.after_update[i].params);
 	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
