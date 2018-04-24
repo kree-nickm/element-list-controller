@@ -107,7 +107,8 @@ function ELC_sort_event_listener(event)
 		this.ELC_list_container.ELC_current_sort_field = this.ELC_field;
 		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
-	ELC_update(this.ELC_list_container, "sort");
+	if(e.detail != "noupdate")
+		ELC_update(this.ELC_list_container, "sort");
 }
 
 function ELC_sort_list(list_container)
@@ -235,7 +236,7 @@ function ELC_compare(a, b, container)
 // ---- Begin filtering functions ----
 function ELC_apply_filter(list_container)
 {
-	if(list_container.ELC_list_filters == null)
+	if(list_container.ELC_active_filters == null)
 		return;
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
@@ -466,7 +467,8 @@ function ELC_filter_change_listener_step2(e)
 					this.ELC_list_container.ELC_filter_list.appendChild(span);
 				}
 	}
-	ELC_update(this.ELC_list_container, "filter");
+	if(e.detail != "noupdate")
+		ELC_update(this.ELC_list_container, "filter");
 }
 
 function remove_filter(e)
@@ -532,26 +534,13 @@ function ELC_display_page(list_container)
 var filter_columns = {}; // TODO: make this an object property
 function ELC_initialize(event)
 {
+	var all_containers = [];
 	// --- Begin sorting setup
 	var sortables = document.getElementsByClassName("sortable");
 	for(var i = 0; i < sortables.length; i++)
 	{
 		if(sortables[i].ELC_list_sorters == null)
 			sortables[i].ELC_list_sorters = [];
-		if(sortables[i].style.position == "static")
-			sortables[i].style.position = "relative";
-		if(sortables[i].tagName == "TABLE")
-		{
-			if(sortables[i].tBodies[0].ELC_MutationObserver == null)
-				sortables[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_element_added);
-			sortables[i].tBodies[0].ELC_MutationObserver.observe(sortables[i], {childList:true});
-		}
-		else
-		{
-			if(sortables[i].ELC_MutationObserver == null)
-				sortables[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
-			sortables[i].ELC_MutationObserver.observe(sortables[i], {childList:true});
-		}
 		for(var k in sortables[i].ELC_list_sorters)
 		{
 			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
@@ -562,6 +551,8 @@ function ELC_initialize(event)
 				delete sortables[i].ELC_list_sorters[k];
 			}
 		}
+		if(!all_containers.includes(sortables[i]))
+			all_containers.push(sortables[i]);
 	}
 	
 	var sorts = document.getElementsByClassName("sort");
@@ -606,9 +597,12 @@ function ELC_initialize(event)
 	var initial_sorts = document.getElementsByClassName("sort-initial");
 	for(var i = 0; i < initial_sorts.length; i++)
 	{
-		initial_sorts[i].dispatchEvent(new Event('click'));
-		initial_sorts[i].classList.remove("sort-initial");
-		// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
+		if(initial_sorts[i].ELC_list_container != null)
+		{
+			initial_sorts[i].dispatchEvent(new CustomEvent("click", {detail:"noupdate"}));
+			initial_sorts[i].classList.remove("sort-initial");
+			// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
+		}
 	}
 	// --- End sorting setup
 	
@@ -618,20 +612,6 @@ function ELC_initialize(event)
 	{
 		if(filterables[i].ELC_list_filters == null)
 			filterables[i].ELC_list_filters = [];
-		if(filterables[i].style.position == "static")
-			filterables[i].style.position = "relative";
-		if(filterables[i].tagName == "TABLE")
-		{
-			if(filterables[i].tBodies[0].ELC_MutationObserver == null)
-				filterables[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_element_added);
-			filterables[i].tBodies[0].ELC_MutationObserver.observe(filterables[i], {childList:true});
-		}
-		else
-		{
-			if(filterables[i].ELC_MutationObserver == null)
-				filterables[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
-			filterables[i].ELC_MutationObserver.observe(filterables[i], {childList:true});
-		}
 		for(var k in filterables[i].ELC_list_filters)
 		{
 			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
@@ -655,6 +635,8 @@ function ELC_initialize(event)
 					filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
 			}
 		}
+		if(!all_containers.includes(filterables[i]))
+			all_containers.push(filterables[i]);
 	}
 	
 	var filter_lists = document.getElementsByClassName("filter-list");
@@ -682,7 +664,8 @@ function ELC_initialize(event)
 				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
 				filters[i].addEventListener("keyup", ELC_filter_change_listener);
 				filters[i].addEventListener("change", ELC_filter_change_listener);
-				filters[i].dispatchEvent(new Event('change'));
+				if(filters[i].value != "")
+					filters[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
 			}
 		}
 	}
@@ -702,6 +685,8 @@ function ELC_initialize(event)
 			pages[i].ELC_currentpage_indicators = [];
 		if(pages[i].ELC_maxpage_indicators == null)
 			pages[i].ELC_maxpage_indicators = [];
+		if(!all_containers.includes(pages[i]))
+			all_containers.push(pages[i]);
 	}
 	
 	var currentpages = document.getElementsByClassName("page-current");
@@ -740,10 +725,7 @@ function ELC_initialize(event)
 			{
 				pageups[i].ELC_list_container.ELC_pageup_buttons.push(pageups[i]);
 				pageups[i].addEventListener("click", function(e){
-					if(this.ELC_list_container.ELC_current_page == 0)
-						return;
-					else
-						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page-1;
+					this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page-1;
 					ELC_update(this.ELC_list_container, "page");
 				});
 			}
@@ -760,11 +742,7 @@ function ELC_initialize(event)
 			{
 				pagedowns[i].ELC_list_container.ELC_pagedown_buttons.push(pagedowns[i]);
 				pagedowns[i].addEventListener("click", function(e){
-					var list = (this.ELC_list_container.tagName=="TABLE" ? this.ELC_list_container.tBodies[0] : this.ELC_list_container);
-					//if(this.ELC_list_container.ELC_current_page+1 >= list.children.length / this.ELC_list_container.ELC_perpage)
-					//	return;	// referring to children above may not be compatible with before_update hooks that alter the list
-					//else				// just send the page+1 and let ELC_display_page deal with it for now
-						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page+1;
+					this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page+1;
 					ELC_update(this.ELC_list_container, "page");
 				});
 			}
@@ -784,12 +762,32 @@ function ELC_initialize(event)
 					this.ELC_list_container.ELC_perpage = val;
 				else
 					this.value = this.ELC_list_container.ELC_perpage = 20; // find a way to let the user set the default?
-				ELC_update(this.ELC_list_container, "page");
+				if(e.detail != "noupdate")
+					ELC_update(this.ELC_list_container, "page");
 			});
-			perpages[i].dispatchEvent(new Event('change'));
+			perpages[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
 		}
 	}
 	// --- End paginating setup
+	
+	for(var i in all_containers)
+	{
+		if(all_containers[i].style.position == "static") // this is only needed if transitions are in use
+			all_containers[i].style.position = "relative";
+		if(all_containers[i].tagName == "TABLE")
+		{
+			if(all_containers[i].tBodies[0].ELC_MutationObserver == null)
+				all_containers[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+			all_containers[i].tBodies[0].ELC_MutationObserver.observe(all_containers[i], {childList:true});
+		}
+		else
+		{
+			if(all_containers[i].ELC_MutationObserver == null)
+				all_containers[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+			all_containers[i].ELC_MutationObserver.observe(all_containers[i], {childList:true});
+		}
+		ELC_update(all_containers[i]);
+	}
 };
 
 document.addEventListener("DOMContentLoaded", ELC_initialize);

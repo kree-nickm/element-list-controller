@@ -57,33 +57,3 @@
 .pagedown.active {
 	opacity: 1;
 }
-
-#list_container {
-	width: 50%;
-}
-
-#list_container, #list_container>div {
-	display: inline-block;
-	border: 1px solid black;
-	margin: 1ex;
-	padding: 1ex;
-}
-
-#list_container>div {
-	width: 30ex;
-	height: 4em;
-}
-
-div.sorter .sort {
-	border: 1px solid black;
-	margin: 1ex 1em;
-	padding: 2px 1ex;
-}
-
-.elcodd {
-	background: rgba(255,255,255,0.1);
-}
-
-.elceven {
-	background: rgba(0,0,0,0.1);
-}
