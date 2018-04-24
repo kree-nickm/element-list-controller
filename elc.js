@@ -741,7 +741,7 @@ function ELC_initialize(event)
 				pageups[i].ELC_list_container.ELC_pageup_buttons.push(pageups[i]);
 				pageups[i].addEventListener("click", function(e){
 					if(this.ELC_list_container.ELC_current_page == 0)
-						return false;
+						return;
 					else
 						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page-1;
 					ELC_update(this.ELC_list_container, "page");
@@ -761,9 +761,9 @@ function ELC_initialize(event)
 				pagedowns[i].ELC_list_container.ELC_pagedown_buttons.push(pagedowns[i]);
 				pagedowns[i].addEventListener("click", function(e){
 					var list = (this.ELC_list_container.tagName=="TABLE" ? this.ELC_list_container.tBodies[0] : this.ELC_list_container);
-					if(this.ELC_list_container.ELC_current_page+1 >= list.children.length / this.ELC_list_container.ELC_perpage)
-						return false;
-					else
+					//if(this.ELC_list_container.ELC_current_page+1 >= list.children.length / this.ELC_list_container.ELC_perpage)
+					//	return;	// referring to children above may not be compatible with before_update hooks that alter the list
+					//else				// just send the page+1 and let ELC_display_page deal with it for now
 						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page+1;
 					ELC_update(this.ELC_list_container, "page");
 				});
@@ -771,6 +771,7 @@ function ELC_initialize(event)
 		}
 	}
 	
+	// TODO: Fix: This currently requires a perpage input element in order for pagination to function. Shouldn't be required.
 	var perpages = document.getElementsByClassName("perpage");
 	for(var i = 0; i < perpages.length; i++)
 	{
