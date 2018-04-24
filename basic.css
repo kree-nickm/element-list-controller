@@ -17,8 +17,12 @@
 	content: "\2193";
 }
 
-.filtered-out {
+.filtered:not([data-pages-include-filtered]) .filtered-out {
 	display: none !important;
+}
+
+.filtered[data-pages-include-filtered] .filtered-out * {
+	opacity: 0.3;
 }
 
 .filter-list * {
@@ -38,7 +42,7 @@
 	background-color: rgba(255,150,150,0.8);
 }
 
-.paged-out {
+.paged .paged-out {
 	display: none !important;
 }
 

@@ -13,7 +13,7 @@ Element.prototype.getFirstElementByName = function(name)
 	return null;
 }
 
-var ELC_hooks = { // TODO: make this an object property
+var ELC_hooks = { // TODO: make this an object property, maybe?
 	before_update:[],
 	after_update:[]
 };
@@ -250,11 +250,11 @@ function ELC_apply_filter(list_container)
 				if(list.children[i].tagName == "TR")
 				{
 					//if(list_container.ELC_current_sort_type == "number")
-					//	var text = parseFloat(list.children[i].children[filter_columns[k]].innerText);
+					//	var text = parseFloat(list.children[i].children[list_container.ELC_filter_columns[k]].innerText);
 					//else if(list_container.ELC_current_sort_type == "html")
-					//	var text = list.children[i].children[filter_columns[k]].innerHTML;
+					//	var text = list.children[i].children[list_container.ELC_filter_columns[k]].innerHTML;
 					//else
-						var text = list.children[i].children[filter_columns[k]].innerText;
+						var text = list.children[i].children[list_container.ELC_filter_columns[k]].innerText;
 				}
 				else
 				{
@@ -351,17 +351,16 @@ function ELC_apply_filter(list_container)
 	}
 }
 
-var filter_delay = setTimeout(function(){}, 1); // TODO: make this an object property
 function ELC_filter_change_listener(e)
 {
-	clearTimeout(filter_delay);
 	if(this.ELC_list_container == null)
 	{
 		console.log("Cannot find the table this filter is meant to apply to: "+ $(this));
 		return;
 	}
+	clearTimeout(this.ELC_list_container.ELC_filter_delay);
 	if(e != null && e.type == "keyup") // Give user some "time" to finish typing.
-		filter_delay = setTimeout(function(c,e){ELC_filter_change_listener_step2.call(c,e);}, 250, this, e);
+		this.ELC_list_container.ELC_filter_delay = setTimeout(function(c,e){ELC_filter_change_listener_step2.call(c,e);}, 250, this, e);
 	else
 		ELC_filter_change_listener_step2.call(this, e);
 }
@@ -484,26 +483,31 @@ function ELC_display_page(list_container)
 		list.children[i].classList.remove("paged-out");
 		list.children[i].classList.remove("elceven");
 		list.children[i].classList.remove("elcodd");
-		if(!list.children[i].classList.contains("filtered-out")) // TODO: make this optional in case user doesn't want filtered things removed completely
+		if(!list.children[i].classList.contains("filtered-out") || list_container.dataset.pagesIncludeFiltered != null)
 			rows.push(list.children[i]);
 	}
-	if(list_container.ELC_current_page <= 0)
+	
+	var num_pages = Math.ceil(rows.length/list_container.ELC_perpage);
+	if(!num_pages)
 	{
-		// TODO: Fix bug: If you are on page 2+ when the perpage is changed to make the page count == 1, "pageup" button doesn't dim out until method is called again
+		console.log("Error when paginating list: could not calculate page count. Either there are no valid rows ("+rows.length+") or perpage value was not properly set ("+list_container.ELC_perpage+").");
+		return;
+	}
+	else if(list_container.ELC_current_page < 0)
+		list_container.ELC_current_page = 0;
+	else if(list_container.ELC_current_page >= num_pages)
+		list_container.ELC_current_page = num_pages-1;
+	
+	if(list_container.ELC_current_page == 0)
 		for(var i in list_container.ELC_pageup_buttons)
 			list_container.ELC_pageup_buttons[i].classList.remove("active");
-		list_container.ELC_current_page = 0;
-	}
 	else
 		for(var i in list_container.ELC_pageup_buttons)
 			list_container.ELC_pageup_buttons[i].classList.add("active");
 	
-	if(list_container.ELC_current_page + 1 >= rows.length / list_container.ELC_perpage)
-	{
+	if(list_container.ELC_current_page == num_pages-1)
 		for(var i in list_container.ELC_pagedown_buttons)
 			list_container.ELC_pagedown_buttons[i].classList.remove("active");
-		list_container.ELC_current_page = Math.ceil(rows.length/list_container.ELC_perpage) - 1;
-	}
 	else
 		for(var i in list_container.ELC_pagedown_buttons)
 			list_container.ELC_pagedown_buttons[i].classList.add("active");
@@ -522,11 +526,10 @@ function ELC_display_page(list_container)
 	for(var i in list_container.ELC_currentpage_indicators)
 		list_container.ELC_currentpage_indicators[i].innerHTML = (list_container.ELC_current_page+1);
 	for(var i in list_container.ELC_maxpage_indicators)
-		list_container.ELC_maxpage_indicators[i].innerHTML = Math.ceil(rows.length/list_container.ELC_perpage);
+		list_container.ELC_maxpage_indicators[i].innerHTML = num_pages;
 }
 // ---- End paginating functions ----
 
-var filter_columns = {}; // TODO: make this an object property
 function ELC_initialize(event)
 {
 	var all_containers = [];
@@ -607,6 +610,7 @@ function ELC_initialize(event)
 	{
 		if(filterables[i].ELC_list_filters == null)
 			filterables[i].ELC_list_filters = [];
+		filterables[i].ELC_filter_delay = setTimeout(function(){}, 1);
 		for(var k in filterables[i].ELC_list_filters)
 		{
 			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
@@ -620,14 +624,15 @@ function ELC_initialize(event)
 		}
 		if(filterables[i].tagName == "TABLE")
 		{
+			filterables[i].ELC_filter_columns = {};
 			var filter_fields = filterables[i].getElementsByClassName("filterable");
 			for(var k = 0; k < filter_fields.length; k++)
 			{
-				// May need to fix .cellIndex here like we did in the sorting code
+				// TODO: May need to fix .cellIndex here like we did in the sorting code
 				if(filter_fields[k].dataset.field != null)
-					filter_columns[filter_fields[k].dataset.field.toLowerCase()] = filter_fields[k].cellIndex;
+					filterables[i].ELC_filter_columns[filter_fields[k].dataset.field.toLowerCase()] = filter_fields[k].cellIndex;
 				else
-					filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
+					filterables[i].ELC_filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
 			}
 		}
 		if(!all_containers.includes(filterables[i]))
@@ -720,6 +725,8 @@ function ELC_initialize(event)
 			{
 				pageups[i].ELC_list_container.ELC_pageup_buttons.push(pageups[i]);
 				pageups[i].addEventListener("click", function(e){
+					if(!this.classList.contains("active"))
+						return;
 					this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page-1;
 					ELC_update(this.ELC_list_container, "page");
 				});
@@ -737,6 +744,8 @@ function ELC_initialize(event)
 			{
 				pagedowns[i].ELC_list_container.ELC_pagedown_buttons.push(pagedowns[i]);
 				pagedowns[i].addEventListener("click", function(e){
+					if(!this.classList.contains("active"))
+						return;
 					this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page+1;
 					ELC_update(this.ELC_list_container, "page");
 				});
@@ -755,8 +764,10 @@ function ELC_initialize(event)
 				var val = parseInt(this.value);
 				if(val)
 					this.ELC_list_container.ELC_perpage = val;
+				else if(this.ELC_list_container.ELC_perpage)
+					this.value = this.ELC_list_container.ELC_perpage;
 				else
-					this.value = this.ELC_list_container.ELC_perpage = 20; // find a way to let the user set the default?
+					this.value = this.ELC_list_container.ELC_perpage = 100; // find a way to let the user set the default?
 				if(e.detail != "noupdate")
 					ELC_update(this.ELC_list_container, "page");
 			});

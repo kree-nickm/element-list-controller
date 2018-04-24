@@ -56,7 +56,6 @@ div.sorter .sort {
 		<tr class="sorter">
 			<th class="sort filterable" data-field="text" data-type="text">Text Column</th>
 			<th class="sort filterable" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
-			<th colspan="2"></th>
 			<th></th>
 		</tr>
 	</thead>
@@ -138,6 +137,38 @@ div.sorter .sort {
 	Page <span class="page-current"></span> of <span class="page-max"></span>
 	<span><input class="perpage" type="number" min="1" max="1000" value="5" width="50"/> per page</span>
 </div>
+
+<h2>Alternate Filter Table</h2>
+<table id="alt_table" class="sortable filtered paged" data-sort-transition-time="0.5s" data-pages-include-filtered="1">
+	<caption>
+		<span class="pageup" style="float:left;">&larr; Previous</span>
+		<span class="pagedown" style="float:right;">Next &rarr;</span>
+		Page <span class="page-current"></span> of <span class="page-max"></span>
+		<span><input class="perpage" type="number" min="1" max="1000" value="4" width="50"/> per page</span>
+		<input class="filter" type="text" placeholder="Search..."/>
+		<span class="filter-list"></span>
+	</caption>
+	<thead>
+		<tr class="sorter">
+			<th class="sort filterable" data-field="text" data-type="text">Text Column</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr><td>v1</td></tr>
+		<tr><td>s3</td></tr>
+		<tr><td>j2</td></tr>
+		<tr><td>g3</td></tr>
+		<tr><td>k1</td></tr>
+		<tr><td>t2</td></tr>
+		<tr><td>m2</td></tr>
+		<tr><td>e3</td></tr>
+		<tr><td>b1</td></tr>
+		<tr><td>u2</td></tr>
+		<tr><td>z1</td></tr>
+		<tr><td>l3</td></tr>
+	</tbody>
+</table>
 
 </body>
 </html>
