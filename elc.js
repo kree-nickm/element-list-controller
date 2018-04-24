@@ -13,11 +13,32 @@ Element.prototype.getFirstElementByName = function(name)
 	return null;
 }
 
-function ELC_update(list_container)
+var ELC_hooks = { // TODO: make this an object property
+	before_update:[],
+	after_update:[]
+};
+function ELC_addHook(type, callback, params)
 {
-	ELC_sort_list(list_container);
-	ELC_apply_filter(list_container);
-	// Paginating function not needed here because both above functions will call it. Also, TODO: fix that; call it only once.
+	if(ELC_hooks[type] != null)
+		ELC_hooks[type].push({callback:callback,params:params});
+	else
+		console.log("Invalid ELC hook: "+ type);
+}
+
+function ELC_update(list_container, type)
+{
+	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
+	list.ELC_MutationObserver.disconnect();
+	for(var i in ELC_hooks.before_update)
+		ELC_hooks.before_update[i].callback.apply(this, ELC_hooks.before_update[i].params);
+	if(type != "page" && type != "filter")
+		ELC_sort_list(list_container);
+	if(type != "page" && type != "sort")
+		ELC_apply_filter(list_container);
+	ELC_display_page(list_container);
+	for(var i in ELC_hooks.after_update)
+		ELC_hooks.after_update[i].callback.apply(this, ELC_hooks.after_update[i].params);
+	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
 function ELC_element_added(mutationList)
@@ -29,9 +50,9 @@ function ELC_element_added(mutationList)
 		{
 			updated.push(mutationList[i].target);
 			if(mutationList[i].target.tagName == "TBODY")
-				ELC_update(mutationList[i].target.parentNode);
+				ELC_update(mutationList[i].target.parentNode, "change");
 			else
-				ELC_update(mutationList[i].target);
+				ELC_update(mutationList[i].target, "change");
 		}
 	}
 }
@@ -86,7 +107,7 @@ function ELC_sort_event_listener(event)
 		this.ELC_list_container.ELC_current_sort_field = this.ELC_field;
 		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
-	ELC_sort_list(this.ELC_list_container);
+	ELC_update(this.ELC_list_container, "sort");
 }
 
 function ELC_sort_list(list_container)
@@ -94,7 +115,6 @@ function ELC_sort_list(list_container)
 	if(list_container.ELC_current_sort_field == null)
 		return;
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
-	list.ELC_MutationObserver.disconnect();
 	for(var i = 0; i < list.children.length; i++)
 	{
 		if(list.children[i].tagName == "TR")
@@ -174,8 +194,6 @@ function ELC_sort_list(list_container)
 			}
 		}
 	}
-	ELC_display_page(list_container);
-	list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
 function ELC_merge_sort(list, container, target)
@@ -330,7 +348,6 @@ function ELC_apply_filter(list_container)
 			}
 		}
 	}
-	ELC_display_page(list_container);
 }
 
 var filter_delay = setTimeout(function(){}, 1); // TODO: make this an object property
@@ -449,7 +466,7 @@ function ELC_filter_change_listener_step2(e)
 					this.ELC_list_container.ELC_filter_list.appendChild(span);
 				}
 	}
-	ELC_apply_filter(this.ELC_list_container);
+	ELC_update(this.ELC_list_container, "filter");
 }
 
 function remove_filter(e)
@@ -473,9 +490,9 @@ function ELC_display_page(list_container)
 		if(!list.children[i].classList.contains("filtered-out")) // TODO: make this optional in case user doesn't want filtered things removed completely
 			rows.push(list.children[i]);
 	}
-	
 	if(list_container.ELC_current_page <= 0)
 	{
+		// TODO: Fix bug: If you are on page 2+ when the perpage is changed to make the page count == 1, "pageup" button doesn't dim out until method is called again
 		for(var i in list_container.ELC_pageup_buttons)
 			list_container.ELC_pageup_buttons[i].classList.remove("active");
 		list_container.ELC_current_page = 0;
@@ -727,7 +744,7 @@ function ELC_initialize(event)
 						return false;
 					else
 						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page-1;
-					ELC_display_page(this.ELC_list_container);
+					ELC_update(this.ELC_list_container, "page");
 				});
 			}
 		}
@@ -748,7 +765,7 @@ function ELC_initialize(event)
 						return false;
 					else
 						this.ELC_list_container.ELC_current_page = this.ELC_list_container.ELC_current_page+1;
-					ELC_display_page(this.ELC_list_container);
+					ELC_update(this.ELC_list_container, "page");
 				});
 			}
 		}
@@ -766,7 +783,7 @@ function ELC_initialize(event)
 					this.ELC_list_container.ELC_perpage = val;
 				else
 					this.value = this.ELC_list_container.ELC_perpage = 20; // find a way to let the user set the default?
-				ELC_display_page(this.ELC_list_container);
+				ELC_update(this.ELC_list_container, "page");
 			});
 			perpages[i].dispatchEvent(new Event('change'));
 		}
