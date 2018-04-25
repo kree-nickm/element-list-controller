@@ -1,4 +1,5 @@
 var ELC_debug_mode = false;
+var ELC_initialized = false;
 Element.prototype.getFirstElementByName = function(name)
 {
 	for(var i = 0; i < this.children.length; i++)
@@ -11,6 +12,72 @@ Element.prototype.getFirstElementByName = function(name)
 			return result;
 	}
 	return null;
+}
+
+var ELC_listDataModels = {"-pre-init-":[]};
+function ELC_setData(template_id, data, auto)
+{
+	if(ELC_initialized)
+	{
+		var template = document.getElementById(template_id);
+		if(template != null)
+		{
+			if(Array.isArray(data))
+			{
+				ELC_listDataModels[template_id] = {parent:template.parentNode,template:template,data:data};
+				template.parentNode.removeChild(template);
+				if(auto)
+					ELC_activateTemplate(template_id);
+			}
+			else
+			{
+				template.parentNode.removeChild(template);
+				console.log("Invalid data model specified in ELC_setData: "+ String(data) +"; must be an array.");
+			}
+		}
+		else
+			console.log("Invalid template id specified in ELC_setData: "+ template_id);
+	}
+	else
+	{
+		ELC_listDataModels["-pre-init-"].push({template_id:template_id,data:data,auto:auto});
+	}
+}
+
+function ELC_activateTemplate(template_id)
+{
+	if(ELC_listDataModels[template_id] != null)
+	{
+		var template = document.createElement("template");
+		for(var i in ELC_listDataModels[template_id].data)
+		{
+			template.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
+			if(ELC_listDataModels[template_id].data[i].id)
+				template.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
+			else
+				template.content.firstChild.id = template_id +"_"+ i;
+			ELC_listDataModels[template_id].parent.appendChild(template.content.firstChild);
+		}
+	}
+	else
+		console.log("Invalid template id specified in ELC_activateTemplate: "+ template_id);
+}
+
+function ELC_deactivateTemplate(template_id)
+{
+	if(ELC_listDataModels[template_id] != null)
+	{
+		for(var i in ELC_listDataModels[template_id].data)
+		{
+			if(ELC_listDataModels[template_id].data[i].id)
+				var id = ELC_listDataModels[template_id].data[i].id;
+			else
+				var id = template_id +"_"+ i;
+			ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
+		}
+	}
+	else
+		console.log("Invalid template id specified in ELC_deactivateTemplate: "+ template_id);
 }
 
 var ELC_hooks = { // TODO: make this an object property, maybe?
@@ -46,7 +113,7 @@ function ELC_element_added(mutationList)
 	var updated = [];
 	for(var i in mutationList)
 	{
-		if(!updated.includes(mutationList[i].target) && mutationList[i].type == "childList")
+		if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
 		{
 			updated.push(mutationList[i].target);
 			if(mutationList[i].target.tagName == "TBODY")
@@ -401,7 +468,7 @@ function ELC_filter_change_listener_step2(e)
 					if(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value.length > 0)
 						this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value);
 				break;
-			case "text":
+			case "text": // TODO: implement "", maybe redo this filter to allow less strict searches
 				var string = this.ELC_list_container.ELC_list_filters[i].value;
 				if(string)
 				{
@@ -549,7 +616,7 @@ function ELC_initialize(event)
 				delete sortables[i].ELC_list_sorters[k];
 			}
 		}
-		if(!all_containers.includes(sortables[i]))
+		if(all_containers.indexOf(sortables[i]) == -1)
 			all_containers.push(sortables[i]);
 	}
 	
@@ -584,7 +651,7 @@ function ELC_initialize(event)
 			else
 				sorts[i].ELC_sort_type = "text";
 			
-			if(!sorts[i].ELC_list_container.ELC_list_sorters.includes(sorts[i]))
+			if(sorts[i].ELC_list_container.ELC_list_sorters.indexOf(sorts[i]) == -1)
 			{
 				sorts[i].ELC_list_container.ELC_list_sorters.push(sorts[i]);
 				sorts[i].addEventListener("click", ELC_sort_event_listener);
@@ -597,7 +664,16 @@ function ELC_initialize(event)
 	{
 		if(initial_sorts[i].ELC_list_container != null)
 		{
-			initial_sorts[i].dispatchEvent(new CustomEvent("click", {detail:"noupdate"}));
+			try
+			{
+				initial_sorts[i].dispatchEvent(new CustomEvent("click", {detail:"noupdate"}));
+			}
+			catch(err)
+			{
+				var event = document.createEvent("customevent");
+				event.initCustomEvent("click", false, false, {detail:"noupdate"})
+				initial_sorts[i].dispatchEvent(event);
+			}
 			initial_sorts[i].classList.remove("sort-initial");
 			// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
 		}
@@ -635,7 +711,7 @@ function ELC_initialize(event)
 					filterables[i].ELC_filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
 			}
 		}
-		if(!all_containers.includes(filterables[i]))
+		if(all_containers.indexOf(filterables[i]) == -1)
 			all_containers.push(filterables[i]);
 	}
 	
@@ -659,13 +735,24 @@ function ELC_initialize(event)
 			else
 				filters[i].ELC_field = "";
 			
-			if(!filters[i].ELC_list_container.ELC_list_filters.includes(filters[i]))
+			if(filters[i].ELC_list_container.ELC_list_filters.indexOf(filters[i]) == -1)
 			{
 				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
 				filters[i].addEventListener("keyup", ELC_filter_change_listener);
 				filters[i].addEventListener("change", ELC_filter_change_listener);
 				if(filters[i].value != "")
-					filters[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+				{
+					try
+					{
+						filters[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+					}
+					catch(err)
+					{
+						var event = document.createEvent("customevent");
+						event.initCustomEvent("change", false, false, {detail:"noupdate"})
+						filters[i].dispatchEvent(event);
+					}
+				}
 			}
 		}
 	}
@@ -685,7 +772,7 @@ function ELC_initialize(event)
 			pages[i].ELC_currentpage_indicators = [];
 		if(pages[i].ELC_maxpage_indicators == null)
 			pages[i].ELC_maxpage_indicators = [];
-		if(!all_containers.includes(pages[i]))
+		if(all_containers.indexOf(pages[i]) == -1)
 			all_containers.push(pages[i]);
 	}
 	
@@ -695,7 +782,7 @@ function ELC_initialize(event)
 		currentpages[i].ELC_list_container = ELC_get_list_container(currentpages[i], "paged", ["page-current", "page-group"]);
 		if(currentpages[i].ELC_list_container != null)
 		{
-			if(!currentpages[i].ELC_list_container.ELC_currentpage_indicators.includes(currentpages[i]))
+			if(currentpages[i].ELC_list_container.ELC_currentpage_indicators.indexOf(currentpages[i]) == -1)
 			{
 				currentpages[i].ELC_list_container.ELC_currentpage_indicators.push(currentpages[i]);
 			}
@@ -708,7 +795,7 @@ function ELC_initialize(event)
 		maxpages[i].ELC_list_container = ELC_get_list_container(maxpages[i], "paged", ["page-max", "page-group"]);
 		if(maxpages[i].ELC_list_container != null)
 		{
-			if(!maxpages[i].ELC_list_container.ELC_maxpage_indicators.includes(maxpages[i]))
+			if(maxpages[i].ELC_list_container.ELC_maxpage_indicators.indexOf(maxpages[i]) == -1)
 			{
 				maxpages[i].ELC_list_container.ELC_maxpage_indicators.push(maxpages[i]);
 			}
@@ -721,7 +808,7 @@ function ELC_initialize(event)
 		pageups[i].ELC_list_container = ELC_get_list_container(pageups[i], "paged", ["pageup", "page-group"]);
 		if(pageups[i].ELC_list_container != null)
 		{
-			if(!pageups[i].ELC_list_container.ELC_pageup_buttons.includes(pageups[i]))
+			if(pageups[i].ELC_list_container.ELC_pageup_buttons.indexOf(pageups[i]) == -1)
 			{
 				pageups[i].ELC_list_container.ELC_pageup_buttons.push(pageups[i]);
 				pageups[i].addEventListener("click", function(e){
@@ -740,7 +827,7 @@ function ELC_initialize(event)
 		pagedowns[i].ELC_list_container = ELC_get_list_container(pagedowns[i], "paged", ["pagedown", "page-group"]);
 		if(pagedowns[i].ELC_list_container != null)
 		{
-			if(!pagedowns[i].ELC_list_container.ELC_pagedown_buttons.includes(pagedowns[i]))
+			if(pagedowns[i].ELC_list_container.ELC_pagedown_buttons.indexOf(pagedowns[i]) == -1)
 			{
 				pagedowns[i].ELC_list_container.ELC_pagedown_buttons.push(pagedowns[i]);
 				pagedowns[i].addEventListener("click", function(e){
@@ -771,7 +858,16 @@ function ELC_initialize(event)
 				if(e.detail != "noupdate")
 					ELC_update(this.ELC_list_container, "page");
 			});
-			perpages[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+			try
+			{
+				perpages[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+			}
+			catch(err)
+			{
+				var event = document.createEvent("customevent");
+				event.initCustomEvent("change", false, false, {detail:"noupdate"})
+				perpages[i].dispatchEvent(event);
+			}
 		}
 	}
 	// --- End paginating setup
@@ -794,6 +890,11 @@ function ELC_initialize(event)
 		}
 		ELC_update(all_containers[i]);
 	}
+	
+	ELC_initialized = true;
+	
+	for(var i in ELC_listDataModels["-pre-init-"])
+		ELC_setData(ELC_listDataModels["-pre-init-"][i].template_id, ELC_listDataModels["-pre-init-"][i].data, ELC_listDataModels["-pre-init-"][i].auto);
 };
 
 document.addEventListener("DOMContentLoaded", ELC_initialize);
