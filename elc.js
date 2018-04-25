@@ -48,15 +48,42 @@ function ELC_activateTemplate(template_id)
 {
 	if(ELC_listDataModels[template_id] != null)
 	{
-		var template = document.createElement("template");
-		for(var i in ELC_listDataModels[template_id].data)
+		var temp = document.createElement("template");
+		if(temp.content != null)
 		{
-			template.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
-			if(ELC_listDataModels[template_id].data[i].id)
-				template.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
+			for(var i in ELC_listDataModels[template_id].data)
+			{
+				temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
+				if(ELC_listDataModels[template_id].data[i].id)
+					temp.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
+				else
+					temp.content.firstChild.id = template_id +"_"+ i;
+				ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild);
+			}
+		}
+		else
+		{
+			var possibles = ["div", "tbody"];
+			var p = 0;
+			do {
+				temp = document.createElement(possibles[p]);
+				temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.trim();
+				p++;
+			} while(temp.firstChild.tagName == null && p < possibles.length);
+			if(temp.firstChild.tagName == null)
+				console.log("Unable to dynamically create elements of type: "+ ELC_listDataModels[template_id].template.tagName);
 			else
-				template.content.firstChild.id = template_id +"_"+ i;
-			ELC_listDataModels[template_id].parent.appendChild(template.content.firstChild);
+			{
+				for(var i in ELC_listDataModels[template_id].data)
+				{
+					temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
+					if(ELC_listDataModels[template_id].data[i].id)
+						temp.firstChild.id = ELC_listDataModels[template_id].data[i].id;
+					else
+						temp.firstChild.id = template_id +"_"+ i;
+					ELC_listDataModels[template_id].parent.appendChild(temp.firstChild);
+				}
+			}
 		}
 	}
 	else
@@ -95,7 +122,8 @@ function ELC_addHook(type, callback, params)
 function ELC_update(list_container, type)
 {
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
-	list.ELC_MutationObserver.disconnect();
+	if(list.ELC_MutationObserver != null)
+		list.ELC_MutationObserver.disconnect();
 	for(var i in ELC_hooks.before_update)
 		ELC_hooks.before_update[i].callback.apply(list_container, ELC_hooks.before_update[i].params);
 	if(type != "page" && type != "filter")
@@ -105,7 +133,8 @@ function ELC_update(list_container, type)
 	ELC_display_page(list_container);
 	for(var i in ELC_hooks.after_update)
 		ELC_hooks.after_update[i].callback.apply(list_container, ELC_hooks.after_update[i].params);
-	list.ELC_MutationObserver.observe(list, {childList:true});
+	if(list.ELC_MutationObserver != null)
+		list.ELC_MutationObserver.observe(list, {childList:true});
 }
 
 function ELC_element_added(mutationList)
@@ -464,9 +493,27 @@ function ELC_filter_change_listener_step2(e)
 					this.ELC_list_container.ELC_active_filters.and[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].value);
 				break;
 			case "select-multiple":
-				for(var k = 0; k < this.ELC_list_container.ELC_list_filters[i].selectedOptions.length; k++)
-					if(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value.length > 0)
-						this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value);
+				if(this.ELC_list_container.ELC_list_filters[i].selectedOptions != null)
+				{
+					for(var k = 0; k < this.ELC_list_container.ELC_list_filters[i].selectedOptions.length; k++)
+						if(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value.length > 0)
+							this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].push(this.ELC_list_container.ELC_list_filters[i].selectedOptions[k].value);
+				}
+				else
+				{
+					var getSelected = function(element) {
+						var result = [];
+						for(var k = 0; k < element.children.length; k++)
+						{
+							if(element.children[k].tagName == "OPTION" && element.children[k].selected && element.children[k].value.length > 0)
+								result.push(element.children[k].value);
+							else if(element.children[k].children.length > 0)
+								result = result.concat(getSelected(element.children[k]));
+						}
+						return result;
+					};
+					this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field] = this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].concat(getSelected(this.ELC_list_container.ELC_list_filters[i]));
+				}
 				break;
 			case "text": // TODO: implement "", maybe redo this filter to allow less strict searches
 				var string = this.ELC_list_container.ELC_list_filters[i].value;
