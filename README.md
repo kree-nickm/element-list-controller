@@ -1,16 +1,19 @@
 # Element List Controller
 Provides robust options for sorting, filtering, paginating, or otherwise displaying lists of data in the form of HTML elements. Data can be laid out in an TABLE with TR rows inside of a TBODY representing each data record, or in any other element with child elements representing each data record.
 
-Browser compatility is not a focus of this project. Development versions are only tested on the latest Firefox and Chrome, with releases also tested on Internet Explorer 11 for basic functionality. Any browser older than that is likely to experience problems. However, any standards-compliant browser should have no issues.
+Browser compatibility is not a focus of this project. Development versions are only tested on the latest Firefox and Chrome, with releases also tested on Internet Explorer 11 for basic functionality. Any browser older than that is likely to experience problems. However, any standards-compliant browser should have no issues.
 
-Terminology used throughout this readme is as follows:
-* __list container__: The DOM element that you have applied the `sortable`/`filtered`/`paged` class(es) to.
-* __list__: If the list container is a TABLE element, then the list is the first TBODY child of it. Otherwise, the list and list container are the same thing.
-* __record__: Each individual DOM element child of the list which contains the data that you wish to display.
-* __field__: A piece of data present on all of the records, which you plan on using to sort or filter the records.
+Terminology used throughout this readme is as follows:  
+__list container__ - The DOM element that you have applied the `sortable`/`filtered`/`paged` class(es) to.  
+__list__ - If the list container is a TABLE element, then the list is the first TBODY child of it. Otherwise, the list and list container are the same thing.  
+__record__ - Each individual DOM element child of the list which contains the data that you wish to display.  
+__field__ - A piece of data present on all of the records, which you plan on using to sort or filter the records.  
 
 * [Usage](#usage)
 	* <a href="#sorting">Sorting</a>
+		* [Sorters](#sorters)
+		* [Defining Field Data to Sort By](#defining-field-data-to-sort-by)
+		* [Animated Sorting](#animated-sorting)
 		* <a href="#sorting-css">CSS</a>
 	* <a href="#filtering">Filtering</a>
 		* <a href="#filtering-css">CSS</a>
@@ -26,7 +29,7 @@ This will include the development version of this script. To load a specific rel
 
 For usage examples, check out [the demo page](https://kree-nickm.github.io/element-list-controller/index.html). Some features of the script require CSS in order to function as expected, so also check out the [basic CSS file](https://kree-nickm.github.io/element-list-controller/basic.css) for recommended CSS to include.
 
-Records added to the list dynamically after the page has loaded will be updated automatically, provided the browser supports `MutationObserver` (IE11 does not). Otherwise, `ELC_update(list_container)` should be called after you add your record elements, where `list_container` is the list container DOM element. You must also manually update if any records are changed in a way that would affect the sorting/filtering, as only new DOM element additions are observed at this time.
+Records added to the list dynamically after the page has loaded will be updated automatically, provided the browser supports [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) (IE11 does not). Otherwise, `ELC_update(list_container)` should be called after you add your record elements, where `list_container` is the list container DOM element. You must also manually update if any records are changed in a way that would affect the sorting/filtering, as only new DOM element additions are observed at this time.
 
 Adding entirely new list containers to the DOM dynamically after the page has loaded is not fully supported. You can call `ELC_initialize()` after adding your new DOM elements, but this is not tested very thoroughly and should not be used in a production environment.
 ### Sorting
@@ -79,6 +82,7 @@ Additionally, it is likely that users will rapidly click on the sorters. To prev
 	-ms-user-select: none;
 }
 ```
+[Back to Top](#element-list-controller)
 ### Filtering
 Add the `filtered` class to a `<table>` element (referred to as the list container). The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be filtered.
 
