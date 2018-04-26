@@ -46,9 +46,20 @@ function ELC_setData(template_id, data, auto)
 
 function ELC_activateTemplate(template_id)
 {
-	if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
 	if(ELC_listDataModels[template_id] != null)
 	{
+		if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
+		for(var i in ELC_hooks.before_template_activate)
+		{
+			try
+			{
+				ELC_hooks.before_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_activate[i].params);
+			}
+			catch(err)
+			{
+				console.warn("Error while running 'before_template_activate' hook #"+i+" ("+ ELC_hooks.before_template_activate[i].callback.name +"): ", err);
+			}
+		}
 		var temp = document.createElement("template");
 		if(temp.content != null)
 		{
@@ -86,17 +97,39 @@ function ELC_activateTemplate(template_id)
 				}
 			}
 		}
+		for(var i in ELC_hooks.after_template_activate)
+		{
+			try
+			{
+				ELC_hooks.after_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_activate[i].params);
+			}
+			catch(err)
+			{
+				console.warn("Error while running 'after_template_activate' hook #"+i+" ("+ ELC_hooks.after_template_activate[i].callback.name +"): ", err);
+			}
+		}
+		if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
 	}
 	else
 		console.error("Invalid template id specified in ELC_activateTemplate: "+ template_id);
-	if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
 }
 
 function ELC_deactivateTemplate(template_id)
 {
-	if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
 	if(ELC_listDataModels[template_id] != null)
 	{
+		if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
+		for(var i in ELC_hooks.before_template_deactivate)
+		{
+			try
+			{
+				ELC_hooks.before_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_deactivate[i].params);
+			}
+			catch(err)
+			{
+				console.warn("Error while running 'before_template_deactivate' hook #"+i+" ("+ ELC_hooks.before_template_deactivate[i].callback.name +"): ", err);
+			}
+		}
 		for(var i in ELC_listDataModels[template_id].data)
 		{
 			if(ELC_listDataModels[template_id].data[i].id)
@@ -105,15 +138,32 @@ function ELC_deactivateTemplate(template_id)
 				var id = template_id +"_"+ i;
 			ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
 		}
+		for(var i in ELC_hooks.after_template_deactivate)
+		{
+			try
+			{
+				ELC_hooks.after_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_deactivate[i].params);
+			}
+			catch(err)
+			{
+				console.warn("Error while running 'after_template_deactivate' hook #"+i+" ("+ ELC_hooks.after_template_deactivate[i].callback.name +"): ", err);
+			}
+		}
+		if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
 	}
 	else
 		console.error("Invalid template id specified in ELC_deactivateTemplate: "+ template_id);
-	if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
 }
 
 var ELC_hooks = { // TODO: make this an object property, maybe?
+	// this = the DOM element being updated
 	before_update:[],
-	after_update:[]
+	after_update:[],
+	// this = child of ELC_listDataModels containing the template info
+	before_template_activate:[],
+	after_template_activate:[],
+	before_template_deactivate:[],
+	after_template_deactivate:[],
 };
 function ELC_addHook(type, callback, params)
 {
