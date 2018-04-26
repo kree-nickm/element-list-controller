@@ -225,26 +225,6 @@ function ELC_update(list_container, type)
 	if(ELC_debug_mode) console.timeEnd("ELC_update() execution time");
 }
 
-function ELC_get_list_container(current, containerClass, myClasses)
-{
-	do {
-		if(current.classList.contains(containerClass))
-			return current;
-		else if(current.dataset.container != null)
-		{
-			for(var i in myClasses)
-			{
-				if(current.classList.contains(myClasses[i]))
-					var result = document.getElementById(current.dataset.container);
-				if(result != null && result.classList.contains(containerClass))
-					return result;
-			}
-		}
-		current = current.parentElement;
-	} while(current != null);
-	return null;
-}
-
 // ---- Begin sorting functions ----
 function ELC_sort_event_listener(event) // TODO: If sort order is descending by default, sortup should be applied instead of sortdown.
 {
@@ -624,22 +604,22 @@ function ELC_filter_change_listener_step2(e)
 		for(var i in this.ELC_list_container.ELC_active_filters.and)
 			if(this.ELC_list_container.ELC_active_filters.and[i].length > 0)
 				for(var k in this.ELC_list_container.ELC_active_filters.and[i])
-					ELC_create_filter_list_element("and", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.and[i][k]);
+					ELC_createFilterListElement("and", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.and[i][k]);
 		for(var i in this.ELC_list_container.ELC_active_filters.or)
 			if(this.ELC_list_container.ELC_active_filters.or[i].length > 0)
 				for(var k in this.ELC_list_container.ELC_active_filters.or[i])
-					ELC_create_filter_list_element("or", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.or[i][k]);
+					ELC_createFilterListElement("or", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.or[i][k]);
 		for(var i in this.ELC_list_container.ELC_active_filters.not)
 			if(this.ELC_list_container.ELC_active_filters.not[i].length > 0)
 				for(var k in this.ELC_list_container.ELC_active_filters.not[i])
-					ELC_create_filter_list_element("not", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.not[i][k]);
+					ELC_createFilterListElement("not", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.not[i][k]);
 	}
 	if(ELC_debug_mode) console.timeEnd("ELC_filter_change_listener_step2() execution time");
 	if(e.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "filter");
 }
 
-function ELC_create_filter_list_element(filter_type, list_container, field, value)
+var ELC_createFilterListElement = function(filter_type, list_container, field, value)
 {
 	var span = document.createElement("span");
 	span.classList.add("filter-"+ filter_type);
@@ -651,7 +631,7 @@ function ELC_create_filter_list_element(filter_type, list_container, field, valu
 	span.addEventListener("click", remove_filter);
 	list_container.ELC_filter_list.appendChild(span);
 }
-
+	
 function remove_filter(e)
 {
 	console.log(e);
@@ -724,10 +704,45 @@ function ELC_display_page(list_container)
 	if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
 }
 // ---- End paginating functions ----
+var ELC_observerCallback = function(mutationList, mutationObserver)
+{
+	var updated = [];
+	for(var i in mutationList)
+	{
+		if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
+		{
+			updated.push(mutationList[i].target);
+			if(mutationList[i].target.tagName == "TBODY")
+				ELC_update(mutationList[i].target.parentNode, "change");
+			else
+				ELC_update(mutationList[i].target, "change");
+		}
+	}
+}
+var ELC_getListContainer = function(current, containerClass, myClasses)
+{
+	do {
+		if(current.classList.contains(containerClass))
+			return current;
+		else if(current.dataset.container != null)
+		{
+			for(var i in myClasses)
+			{
+				if(current.classList.contains(myClasses[i]))
+					var result = document.getElementById(current.dataset.container);
+				if(result != null && result.classList.contains(containerClass))
+					return result;
+			}
+		}
+		current = current.parentElement;
+	} while(current != null);
+	return null;
+}
 
 function ELC_initialize(event)
 {
 	if(ELC_debug_mode) console.time("ELC_initialize() execution time");
+	
 	var all_containers = [];
 	// --- Begin sorting setup
 	var sortables = document.getElementsByClassName("sortable");
@@ -737,8 +752,8 @@ function ELC_initialize(event)
 			sortables[i].ELC_list_sorters = [];
 		for(var k in sortables[i].ELC_list_sorters)
 		{
-			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
-			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_get_list_container(sortables[i].ELC_list_sorters[k], "sortable", ["sort", "sort-group"]);
+			// TODO: Fix this: ELC_getListContainer gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
+			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_getListContainer(sortables[i].ELC_list_sorters[k], "sortable", ["sort", "sort-group"]);
 			if(sortables[i].ELC_list_sorters[k].ELC_list_container != sortables[i])
 			{
 				sortables[i].ELC_list_sorters[k].removeEventListener("click", ELC_sort_event_listener);
@@ -752,7 +767,7 @@ function ELC_initialize(event)
 	var sorts = document.getElementsByClassName("sort");
 	for(var i = 0; i < sorts.length; i++)
 	{
-		sorts[i].ELC_list_container = ELC_get_list_container(sorts[i], "sortable", ["sort", "sort-group"]);
+		sorts[i].ELC_list_container = ELC_getListContainer(sorts[i], "sortable", ["sort", "sort-group"]);
 		if(sorts[i].ELC_list_container != null)
 		{
 			if(sorts[i].ELC_list_container.tagName == "TABLE")
@@ -818,8 +833,8 @@ function ELC_initialize(event)
 		filterables[i].ELC_filter_delay = setTimeout(function(){}, 1);
 		for(var k in filterables[i].ELC_list_filters)
 		{
-			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
-			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_get_list_container(filterables[i].ELC_list_filters[k], "filtered", ["filter", "filter-group"]);
+			// TODO: Fix this: ELC_getListContainer gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
+			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_getListContainer(filterables[i].ELC_list_filters[k], "filtered", ["filter", "filter-group"]);
 			if(filterables[i].ELC_list_filters[k].ELC_list_container != filterables[i])
 			{
 				filterables[i].ELC_list_filters[k].removeEventListener("keyup", ELC_filter_change_listener);
@@ -847,7 +862,7 @@ function ELC_initialize(event)
 	var filter_lists = document.getElementsByClassName("filter-list");
 	for(var i = 0; i < filter_lists.length; i++)
 	{
-		filter_lists[i].ELC_list_container = ELC_get_list_container(filter_lists[i], "filtered", ["filter-list", "filter-group"]);
+		filter_lists[i].ELC_list_container = ELC_getListContainer(filter_lists[i], "filtered", ["filter-list", "filter-group"]);
 		if(filter_lists[i].ELC_list_container != null)
 			if(filter_lists[i].ELC_list_container.ELC_filter_list != filter_lists[i])
 				filter_lists[i].ELC_list_container.ELC_filter_list = filter_lists[i];
@@ -856,7 +871,7 @@ function ELC_initialize(event)
 	var filters = document.getElementsByClassName("filter");
 	for(var i = 0; i < filters.length; i++)
 	{
-		filters[i].ELC_list_container = ELC_get_list_container(filters[i], "filtered", ["filter", "filter-group"]);
+		filters[i].ELC_list_container = ELC_getListContainer(filters[i], "filtered", ["filter", "filter-group"]);
 		if(filters[i].ELC_list_container != null)
 		{
 			if(filters[i].dataset.field != null)
@@ -908,7 +923,7 @@ function ELC_initialize(event)
 	var currentpages = document.getElementsByClassName("page-current");
 	for(var i = 0; i < currentpages.length; i++)
 	{
-		currentpages[i].ELC_list_container = ELC_get_list_container(currentpages[i], "paged", ["page-current", "page-group"]);
+		currentpages[i].ELC_list_container = ELC_getListContainer(currentpages[i], "paged", ["page-current", "page-group"]);
 		if(currentpages[i].ELC_list_container != null)
 		{
 			if(currentpages[i].ELC_list_container.ELC_currentpage_indicators.indexOf(currentpages[i]) == -1)
@@ -921,7 +936,7 @@ function ELC_initialize(event)
 	var maxpages = document.getElementsByClassName("page-max");
 	for(var i = 0; i < maxpages.length; i++)
 	{
-		maxpages[i].ELC_list_container = ELC_get_list_container(maxpages[i], "paged", ["page-max", "page-group"]);
+		maxpages[i].ELC_list_container = ELC_getListContainer(maxpages[i], "paged", ["page-max", "page-group"]);
 		if(maxpages[i].ELC_list_container != null)
 		{
 			if(maxpages[i].ELC_list_container.ELC_maxpage_indicators.indexOf(maxpages[i]) == -1)
@@ -934,7 +949,7 @@ function ELC_initialize(event)
 	var pageups = document.getElementsByClassName("pageup");
 	for(var i = 0; i < pageups.length; i++)
 	{
-		pageups[i].ELC_list_container = ELC_get_list_container(pageups[i], "paged", ["pageup", "page-group"]);
+		pageups[i].ELC_list_container = ELC_getListContainer(pageups[i], "paged", ["pageup", "page-group"]);
 		if(pageups[i].ELC_list_container != null)
 		{
 			if(pageups[i].ELC_list_container.ELC_pageup_buttons.indexOf(pageups[i]) == -1)
@@ -953,7 +968,7 @@ function ELC_initialize(event)
 	var pagedowns = document.getElementsByClassName("pagedown");
 	for(var i = 0; i < pagedowns.length; i++)
 	{
-		pagedowns[i].ELC_list_container = ELC_get_list_container(pagedowns[i], "paged", ["pagedown", "page-group"]);
+		pagedowns[i].ELC_list_container = ELC_getListContainer(pagedowns[i], "paged", ["pagedown", "page-group"]);
 		if(pagedowns[i].ELC_list_container != null)
 		{
 			if(pagedowns[i].ELC_list_container.ELC_pagedown_buttons.indexOf(pagedowns[i]) == -1)
@@ -973,7 +988,7 @@ function ELC_initialize(event)
 	var perpages = document.getElementsByClassName("perpage");
 	for(var i = 0; i < perpages.length; i++)
 	{
-		perpages[i].ELC_list_container = ELC_get_list_container(perpages[i], "paged", ["perpage", "page-group"]);
+		perpages[i].ELC_list_container = ELC_getListContainer(perpages[i], "paged", ["perpage", "page-group"]);
 		if(perpages[i].ELC_list_container != null)
 		{
 			perpages[i].addEventListener("change", function(e){
@@ -1001,22 +1016,6 @@ function ELC_initialize(event)
 	}
 	// --- End paginating setup
 	
-
-	var ELC_element_added = function(mutationList, mutationObserver)
-	{
-		var updated = [];
-		for(var i in mutationList)
-		{
-			if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
-			{
-				updated.push(mutationList[i].target);
-				if(mutationList[i].target.tagName == "TBODY")
-					ELC_update(mutationList[i].target.parentNode, "change");
-				else
-					ELC_update(mutationList[i].target, "change");
-			}
-		}
-	}
 	for(var i in all_containers)
 	{
 		if(all_containers[i].style.position == "static") // this is only needed if transitions are in use
@@ -1024,13 +1023,13 @@ function ELC_initialize(event)
 		if(all_containers[i].tagName == "TABLE")
 		{
 			if(all_containers[i].tBodies[0].ELC_MutationObserver == null)
-				all_containers[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+				all_containers[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
 			all_containers[i].tBodies[0].ELC_MutationObserver.observe(all_containers[i], {childList:true});
 		}
 		else
 		{
 			if(all_containers[i].ELC_MutationObserver == null)
-				all_containers[i].ELC_MutationObserver = new MutationObserver(ELC_element_added);
+				all_containers[i].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
 			all_containers[i].ELC_MutationObserver.observe(all_containers[i], {childList:true});
 		}
 		ELC_update(all_containers[i]);
