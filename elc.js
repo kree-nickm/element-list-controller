@@ -687,11 +687,16 @@ function ELC_display_page(list_container)
 	}
 	
 	var num_pages = Math.ceil(rows.length/list_container.ELC_perpage);
-	if(!num_pages)
+	if(!list_container.ELC_perpage)
 	{
-		console.error("Error when paginating list: could not calculate page count. Either there are no valid rows ("+rows.length+") or perpage value was not properly set ("+list_container.ELC_perpage+").");
+		console.error("Error when paginating list: could not calculate page count because perpage value was not properly set ("+list_container.ELC_perpage+").");
 		if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
 		return;
+	}
+	else if(!rows.length)
+	{
+		console.warn("Cannot paginate a list that has no elements.");
+		list_container.ELC_current_page = -1;
 	}
 	else if(list_container.ELC_current_page < 0)
 		list_container.ELC_current_page = 0;
