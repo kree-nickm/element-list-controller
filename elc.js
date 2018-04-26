@@ -393,7 +393,7 @@ function ELC_apply_filter(list_container)
 			// k is either "" for a filter that applies to all text in the element, or the identifier of the data to be matched against
 			if(k)
 			{
-				if(list.children[i].tagName == "TR")
+				if(list.children[i].tagName == "TR" && list_container.ELC_filter_columns[k] != null)
 				{
 					//if(list_container.ELC_current_sort_type == "number")
 					//	var text = parseFloat(list.children[i].children[list_container.ELC_filter_columns[k]].innerText);
