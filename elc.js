@@ -225,22 +225,6 @@ function ELC_update(list_container, type)
 	if(ELC_debug_mode) console.timeEnd("ELC_update() execution time");
 }
 
-function ELC_element_added(mutationList)
-{
-	var updated = [];
-	for(var i in mutationList)
-	{
-		if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
-		{
-			updated.push(mutationList[i].target);
-			if(mutationList[i].target.tagName == "TBODY")
-				ELC_update(mutationList[i].target.parentNode, "change");
-			else
-				ELC_update(mutationList[i].target, "change");
-		}
-	}
-}
-
 function ELC_get_list_container(current, containerClass, myClasses)
 {
 	do {
@@ -262,7 +246,7 @@ function ELC_get_list_container(current, containerClass, myClasses)
 }
 
 // ---- Begin sorting functions ----
-function ELC_sort_event_listener(event)
+function ELC_sort_event_listener(event) // TODO: If sort order is descending by default, sortup should be applied instead of sortdown.
 {
 	if(this.ELC_list_container == null)
 	{
@@ -303,32 +287,23 @@ function ELC_sort_list(list_container)
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
 	{
-		if(list.children[i].tagName == "TR")
-		{
-			if(list_container.ELC_current_sort_type == "number")
-				list.children[i].ELC_current_sort_value = parseFloat(list.children[i].children[list_container.ELC_current_sort_field].innerText);
-			else if(list_container.ELC_current_sort_type == "html")
-				list.children[i].ELC_current_sort_value = list.children[i].children[list_container.ELC_current_sort_field].innerHTML;
-			else
-				list.children[i].ELC_current_sort_value = list.children[i].children[list_container.ELC_current_sort_field].innerText;
-		}
+		if(list.children[i].dataset[list_container.ELC_current_sort_field+"Value"] != null)
+			var string = list.children[i].dataset[list_container.ELC_current_sort_field+"Value"];
 		else
 		{
-			if(list.children[i].dataset[list_container.ELC_current_sort_field+"Value"] != null)
-				var string = list.children[i].dataset[list_container.ELC_current_sort_field+"Value"];
+			if(list.children[i].tagName == "TR")
+				var element = list.children[i].children[list_container.ELC_current_sort_field];
 			else
-			{
 				var element = list.children[i].getFirstElementByName(list_container.ELC_current_sort_field);
-				if(element != null)
-					var string = (element.dataset.value!=null ? element.dataset.value : (list_container.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
-				else
-					var string = "";
-			}
-			if(list_container.ELC_current_sort_type == "number")
-				list.children[i].ELC_current_sort_value = parseFloat(string);
+			if(element != null)
+				var string = (element.dataset.value!=null ? element.dataset.value : (list_container.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
 			else
-				list.children[i].ELC_current_sort_value = string;
+				var string = "";
 		}
+		if(list_container.ELC_current_sort_type == "number")
+			list.children[i].ELC_current_sort_value = parseFloat(string);
+		else
+			list.children[i].ELC_current_sort_value = string;
 		if(list_container.dataset.sortTransitionTime)
 		{
 			list.children[i].ELC_prevTop = list.children[i].offsetTop;
@@ -763,7 +738,7 @@ function ELC_initialize(event)
 		for(var k in sortables[i].ELC_list_sorters)
 		{
 			// TODO: Fix this: ELC_get_list_container gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("sort").
-			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_get_list_container(sortables[i].ELC_list_sorters[k], "sortable", ["sort", "sorter"]);
+			sortables[i].ELC_list_sorters[k].ELC_list_container = ELC_get_list_container(sortables[i].ELC_list_sorters[k], "sortable", ["sort", "sort-group"]);
 			if(sortables[i].ELC_list_sorters[k].ELC_list_container != sortables[i])
 			{
 				sortables[i].ELC_list_sorters[k].removeEventListener("click", ELC_sort_event_listener);
@@ -777,7 +752,7 @@ function ELC_initialize(event)
 	var sorts = document.getElementsByClassName("sort");
 	for(var i = 0; i < sorts.length; i++)
 	{
-		sorts[i].ELC_list_container = ELC_get_list_container(sorts[i], "sortable", ["sort", "sorter"]);
+		sorts[i].ELC_list_container = ELC_get_list_container(sorts[i], "sortable", ["sort", "sort-group"]);
 		if(sorts[i].ELC_list_container != null)
 		{
 			if(sorts[i].ELC_list_container.tagName == "TABLE")
@@ -1026,6 +1001,22 @@ function ELC_initialize(event)
 	}
 	// --- End paginating setup
 	
+
+	var ELC_element_added = function(mutationList, mutationObserver)
+	{
+		var updated = [];
+		for(var i in mutationList)
+		{
+			if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
+			{
+				updated.push(mutationList[i].target);
+				if(mutationList[i].target.tagName == "TBODY")
+					ELC_update(mutationList[i].target.parentNode, "change");
+				else
+					ELC_update(mutationList[i].target, "change");
+			}
+		}
+	}
 	for(var i in all_containers)
 	{
 		if(all_containers[i].style.position == "static") // this is only needed if transitions are in use

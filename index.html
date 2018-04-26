@@ -57,7 +57,7 @@ ELC_setData("js_div_template_b", template_data, false);
 	height: 4em;
 }
 
-div.sorter .sort {
+div.sort-group .sort {
 	border: 1px solid black;
 	margin: 1ex 1em;
 	padding: 2px 1ex;
@@ -85,7 +85,7 @@ div.sorter .sort {
 		<span class="filter-list"></span>
 	</caption>
 	<thead>
-		<tr class="sorter">
+		<tr class="sort-group">
 			<th class="sort filterable" data-field="text" data-type="text">Text Column</th>
 			<th class="sort filterable" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
 			<th></th>
@@ -126,7 +126,7 @@ div.sorter .sort {
 </table>
 
 <h2>Arbitrary HTML</h2>
-<div class="sorter" data-container="list_container">
+<div class="sort-group" data-container="list_container">
 	<span class="sort" data-field="textfield" data-type="text">By Attribute</span>
 	<span class="sort" data-field="htmlfield" data-type="text">By Name</span>
 	<span class="sort" data-field="numberfield" data-type="number">By Number</span>
@@ -184,7 +184,7 @@ div.sorter .sort {
 		<span class="filter-list"></span>
 	</caption>
 	<thead>
-		<tr class="sorter">
+		<tr class="sort-group">
 			<th class="sort filterable" data-field="stream" data-type="text">Stream</th>
 			<th class="sort filterable" data-field="viewers" data-type="number">Viewers</th>
 		</tr>
@@ -192,20 +192,24 @@ div.sorter .sort {
 	<tbody>
 		<tr id="js_table_template">
 			<td>{{name}}</td>
-			<td>{{number}}</td>
+			<td data-value="{{number}}">___</td>
 		</tr>
 	</tbody>
 </table>
 
 <h2>Javascript Generated Divs</h2>
+<div class="sort-group" data-container="js_div">
+	<span class="sort" data-field="stream" data-type="text">Stream</span>
+	<span class="sort" data-field="viewers" data-type="number">Viewers</span>
+</div>
 <div id="js_div" class="sortable filtered" data-pages-include-filtered="1">
 	<div id="js_div_template_a">
-		<i name="name">{{name}}</i>
-		<i name="number">{{number}}</i>
+		<i name="stream">{{name}}</i>
+		<i name="viewers">{{number}}</i>
 	</div>
 	<div id="js_div_template_b">
-		<b name="name">{{name}}</b>
-		<b name="number">{{number}}</b>
+		<b name="stream">{{name}}</b>
+		<b name="viewers">{{number}}</b>
 	</div>
 </div>
 <button onclick="ELC_activateTemplate('js_div_template_a')">Activate A</button>
