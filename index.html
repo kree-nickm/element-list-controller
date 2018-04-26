@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="basic.css"/>
 <script src="elc.js"></script>
 <script type="text/javascript">
-ELC_addHook("before_update", function(){console.log(this);});
+ELC_addHook("before_update", function(){/* do stuff */});
 var template_data = [
 	{
 		name: "clintstevens",
@@ -197,7 +197,7 @@ div.sorter .sort {
 </table>
 
 <h2>Javascript Generated Divs</h2>
-<div id="js_div" class="sortable filtered paged" data-pages-include-filtered="1">
+<div id="js_div" class="sortable filtered" data-pages-include-filtered="1">
 	<div id="js_div_template">
 		<span name="name">{{name}}</span>
 		<span name="number">{{number}}</span>

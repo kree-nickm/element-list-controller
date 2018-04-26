@@ -17,7 +17,7 @@ Element.prototype.getFirstElementByName = function(name)
 var ELC_listDataModels = {"-pre-init-":[]};
 function ELC_setData(template_id, data, auto)
 {
-	if(ELC_initialized)
+	if(ELC_initialized) // TODO: We don't need ELC to be initialized, just the DOM so that document.getElementById(template_id) can access it.
 	{
 		var template = document.getElementById(template_id);
 		if(template != null)
@@ -32,11 +32,11 @@ function ELC_setData(template_id, data, auto)
 			else
 			{
 				template.parentNode.removeChild(template);
-				console.log("Invalid data model specified in ELC_setData: "+ String(data) +"; must be an array.");
+				console.error("Invalid data model specified in ELC_setData: "+ String(data) +"; must be an array.");
 			}
 		}
 		else
-			console.log("Invalid template id specified in ELC_setData: "+ template_id);
+			console.error("Invalid template id specified in ELC_setData: "+ template_id);
 	}
 	else
 	{
@@ -71,7 +71,7 @@ function ELC_activateTemplate(template_id)
 				p++;
 			} while(temp.firstChild.tagName == null && p < possibles.length);
 			if(temp.firstChild.tagName == null)
-				console.log("Unable to dynamically create elements of type: "+ ELC_listDataModels[template_id].template.tagName);
+				console.error("Unable to dynamically create elements of type: "+ ELC_listDataModels[template_id].template.tagName);
 			else
 			{
 				for(var i in ELC_listDataModels[template_id].data)
@@ -87,7 +87,7 @@ function ELC_activateTemplate(template_id)
 		}
 	}
 	else
-		console.log("Invalid template id specified in ELC_activateTemplate: "+ template_id);
+		console.error("Invalid template id specified in ELC_activateTemplate: "+ template_id);
 }
 
 function ELC_deactivateTemplate(template_id)
@@ -104,7 +104,7 @@ function ELC_deactivateTemplate(template_id)
 		}
 	}
 	else
-		console.log("Invalid template id specified in ELC_deactivateTemplate: "+ template_id);
+		console.error("Invalid template id specified in ELC_deactivateTemplate: "+ template_id);
 }
 
 var ELC_hooks = { // TODO: make this an object property, maybe?
@@ -116,25 +116,45 @@ function ELC_addHook(type, callback, params)
 	if(ELC_hooks[type] != null)
 		ELC_hooks[type].push({callback:callback,params:params});
 	else
-		console.log("Invalid ELC hook: "+ type);
+		console.error("Invalid ELC hook: "+ type);
 }
 
 function ELC_update(list_container, type)
 {
+	if(ELC_debug_mode) console.time("ELC_update() execution time");
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.disconnect();
 	for(var i in ELC_hooks.before_update)
-		ELC_hooks.before_update[i].callback.apply(list_container, ELC_hooks.before_update[i].params);
+	{
+		try
+		{
+			ELC_hooks.before_update[i].callback.apply(list_container, ELC_hooks.before_update[i].params);
+		}
+		catch(err)
+		{
+			console.warn("Error while running 'before_update' hook #"+i+" ("+ ELC_hooks.before_update[i].callback.name +"): ", err);
+		}
+	}
 	if(type != "page" && type != "filter")
 		ELC_sort_list(list_container);
 	if(type != "page" && type != "sort")
 		ELC_apply_filter(list_container);
 	ELC_display_page(list_container);
 	for(var i in ELC_hooks.after_update)
-		ELC_hooks.after_update[i].callback.apply(list_container, ELC_hooks.after_update[i].params);
+	{
+		try
+		{
+			ELC_hooks.after_update[i].callback.apply(list_container, ELC_hooks.after_update[i].params);
+		}
+		catch(err)
+		{
+			console.warn("Error while running 'after_update' hook #"+i+" ("+ ELC_hooks.after_update[i].callback.name +"): ", err);
+		}
+	}
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.observe(list, {childList:true});
+	if(ELC_debug_mode) console.timeEnd("ELC_update() execution time");
 }
 
 function ELC_element_added(mutationList)
@@ -178,7 +198,7 @@ function ELC_sort_event_listener(event)
 {
 	if(this.ELC_list_container == null)
 	{
-		console.log("Cannot find the table this sorter is meant to apply to: "+ $(this));
+		console.error("Cannot find the table this sorter is meant to apply to: "+ $(this));
 		return;
 	}
 	for(var i in this.ELC_list_container.ELC_list_sorters)
@@ -211,6 +231,7 @@ function ELC_sort_list(list_container)
 {
 	if(list_container.ELC_current_sort_field == null)
 		return;
+	if(ELC_debug_mode) console.time("ELC_sort_list() execution time");
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
 	{
@@ -246,9 +267,12 @@ function ELC_sort_list(list_container)
 			list.children[i].ELC_prevLeft = list.children[i].offsetLeft;
 		}
 	}
+	if(ELC_debug_mode) console.time("ELC_merge_sort() execution time");
 	ELC_merge_sort(list.children, list_container, list);
+	if(ELC_debug_mode) console.timeEnd("ELC_merge_sort() execution time");
 	if(list_container.dataset.sortTransitionTime)
 	{
+		if(ELC_debug_mode) console.time("ELC_sort_list() animation execution time");
 		for(var i = 0; i < list.children.length; i++)
 		{
 			var element = list.children[i];
@@ -290,7 +314,9 @@ function ELC_sort_list(list_container)
 				}, 1, element);
 			}
 		}
+		if(ELC_debug_mode) console.timeEnd("ELC_sort_list() animation execution time");
 	}
+	if(ELC_debug_mode) console.timeEnd("ELC_sort_list() execution time");
 }
 
 function ELC_merge_sort(list, container, target)
@@ -334,6 +360,7 @@ function ELC_apply_filter(list_container)
 {
 	if(list_container.ELC_active_filters == null)
 		return;
+	if(ELC_debug_mode) console.time("ELC_apply_filter() execution time");
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
 	{
@@ -390,7 +417,7 @@ function ELC_apply_filter(list_container)
 					}
 					catch(err)
 					{
-						console.log(err);
+						console.warn(err);
 					}
 				}
 			}
@@ -411,7 +438,7 @@ function ELC_apply_filter(list_container)
 					}
 					catch(err)
 					{
-						console.log(err);
+						console.warn(err);
 					}
 				}
 			}
@@ -431,12 +458,12 @@ function ELC_apply_filter(list_container)
 					}
 					catch(err)
 					{
-						console.log(err);
+						console.warn(err);
 					}
 				}
 			}
 			
-			if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, andFilters:list_container.ELC_active_filters.and[k], orFilters:list_container.ELC_active_filters.or[k], notFilters:list_container.ELC_active_filters.not[k], andResult:and_clause, orResult:or_clause, notResult:not_clause});
+			//if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, allFilters:list_container.ELC_active_filters, andResult:and_clause, orResult:or_clause, notResult:not_clause});
 			
 			if(!and_clause || !or_clause || !not_clause)
 			{
@@ -445,13 +472,14 @@ function ELC_apply_filter(list_container)
 			}
 		}
 	}
+	if(ELC_debug_mode) console.timeEnd("ELC_apply_filter() execution time");
 }
 
 function ELC_filter_change_listener(e)
 {
 	if(this.ELC_list_container == null)
 	{
-		console.log("Cannot find the table this filter is meant to apply to: "+ $(this));
+		console.error("Cannot find the table this filter is meant to apply to: "+ $(this));
 		return;
 	}
 	clearTimeout(this.ELC_list_container.ELC_filter_delay);
@@ -463,6 +491,7 @@ function ELC_filter_change_listener(e)
 
 function ELC_filter_change_listener_step2(e)
 {
+	if(ELC_debug_mode) console.time("ELC_filter_change_listener_step2() execution time");
 	// TODO: save the current filters instead of rebuild from scratch if they haven't changed
 	this.ELC_list_container.ELC_active_filters = {
 		and: {},
@@ -542,7 +571,7 @@ function ELC_filter_change_listener_step2(e)
 				}
 				break;
 			default:
-				console.log("No filter processing available for element of type: "+ this.ELC_list_container.ELC_list_filters[i].type);
+				console.warn("No filter processing available for element of type: "+ this.ELC_list_container.ELC_list_filters[i].type);
 		}
 	}
 	// TODO: save the created elements and don't recreate them if they haven't changed
@@ -562,6 +591,7 @@ function ELC_filter_change_listener_step2(e)
 				for(var k in this.ELC_list_container.ELC_active_filters.not[i])
 					ELC_create_filter_list_element("not", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.not[i][k]);
 	}
+	if(ELC_debug_mode) console.timeEnd("ELC_filter_change_listener_step2() execution time");
 	if(e.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "filter");
 }
@@ -590,6 +620,7 @@ function ELC_display_page(list_container)
 {
 	if(list_container.ELC_current_page == null)
 		return;
+	if(ELC_debug_mode) console.time("ELC_display_page() execution time");
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	var rows = [];
 	for(var i = 0; i < list.children.length; i++)
@@ -604,7 +635,8 @@ function ELC_display_page(list_container)
 	var num_pages = Math.ceil(rows.length/list_container.ELC_perpage);
 	if(!num_pages)
 	{
-		console.log("Error when paginating list: could not calculate page count. Either there are no valid rows ("+rows.length+") or perpage value was not properly set ("+list_container.ELC_perpage+").");
+		console.error("Error when paginating list: could not calculate page count. Either there are no valid rows ("+rows.length+") or perpage value was not properly set ("+list_container.ELC_perpage+").");
+		if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
 		return;
 	}
 	else if(list_container.ELC_current_page < 0)
@@ -641,11 +673,13 @@ function ELC_display_page(list_container)
 		list_container.ELC_currentpage_indicators[i].innerHTML = (list_container.ELC_current_page+1);
 	for(var i in list_container.ELC_maxpage_indicators)
 		list_container.ELC_maxpage_indicators[i].innerHTML = num_pages;
+	if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
 }
 // ---- End paginating functions ----
 
 function ELC_initialize(event)
 {
+	if(ELC_debug_mode) console.time("ELC_initialize() execution time");
 	var all_containers = [];
 	// --- Begin sorting setup
 	var sortables = document.getElementsByClassName("sortable");
@@ -937,7 +971,7 @@ function ELC_initialize(event)
 		}
 		ELC_update(all_containers[i]);
 	}
-	
+	if(ELC_debug_mode) console.timeEnd("ELC_initialize() execution time");
 	ELC_initialized = true;
 	
 	for(var i in ELC_listDataModels["-pre-init-"])
