@@ -7,7 +7,7 @@ Currently only applies to HTML elements that are present on the page at the time
 Include the following into your HTML document:
 ```html
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://kree-nickm.github.io/element-list-controller/v1.0.0/elc.js"></script>
+<script src="https://kree-nickm.github.io/element-list-controller/v1.0.0/elc.min.js"></script>
 ```
 This will include both jQuery and this script.
 
