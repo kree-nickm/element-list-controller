@@ -46,6 +46,7 @@ function ELC_setData(template_id, data, auto)
 
 function ELC_activateTemplate(template_id)
 {
+	if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
 	if(ELC_listDataModels[template_id] != null)
 	{
 		var temp = document.createElement("template");
@@ -88,10 +89,12 @@ function ELC_activateTemplate(template_id)
 	}
 	else
 		console.error("Invalid template id specified in ELC_activateTemplate: "+ template_id);
+	if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
 }
 
 function ELC_deactivateTemplate(template_id)
 {
+	if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
 	if(ELC_listDataModels[template_id] != null)
 	{
 		for(var i in ELC_listDataModels[template_id].data)
@@ -105,6 +108,7 @@ function ELC_deactivateTemplate(template_id)
 	}
 	else
 		console.error("Invalid template id specified in ELC_deactivateTemplate: "+ template_id);
+	if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
 }
 
 var ELC_hooks = { // TODO: make this an object property, maybe?
