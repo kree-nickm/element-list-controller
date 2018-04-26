@@ -255,7 +255,7 @@ function ELC_sort_event_listener(event) // TODO: If sort order is descending by 
 		this.ELC_list_container.ELC_current_sort_field = this.ELC_field;
 		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
-	if(e.detail != "noupdate")
+	if(event.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "sort");
 }
 
