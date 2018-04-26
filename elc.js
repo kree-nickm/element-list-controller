@@ -48,67 +48,75 @@ function ELC_activateTemplate(template_id)
 {
 	if(ELC_listDataModels[template_id] != null)
 	{
-		if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
-		for(var i in ELC_hooks.before_template_activate)
+		if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == null)
 		{
-			try
+			if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
+			for(var i in ELC_hooks.before_template_activate)
 			{
-				ELC_hooks.before_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_activate[i].params);
+				try
+				{
+					ELC_hooks.before_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_activate[i].params);
+				}
+				catch(err)
+				{
+					console.warn("Error while running 'before_template_activate' hook #"+i+" ("+ ELC_hooks.before_template_activate[i].callback.name +"): ", err);
+				}
 			}
-			catch(err)
-			{
-				console.warn("Error while running 'before_template_activate' hook #"+i+" ("+ ELC_hooks.before_template_activate[i].callback.name +"): ", err);
-			}
-		}
-		var temp = document.createElement("template");
-		if(temp.content != null)
-		{
-			for(var i in ELC_listDataModels[template_id].data)
-			{
-				temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
-				if(ELC_listDataModels[template_id].data[i].id)
-					temp.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
-				else
-					temp.content.firstChild.id = template_id +"_"+ i;
-				ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild);
-			}
-		}
-		else
-		{
-			var possibles = ["div", "tbody"];
-			var p = 0;
-			do {
-				temp = document.createElement(possibles[p]);
-				temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.trim();
-				p++;
-			} while(temp.firstChild.tagName == null && p < possibles.length);
-			if(temp.firstChild.tagName == null)
-				console.error("Unable to dynamically create elements of type: "+ ELC_listDataModels[template_id].template.tagName);
-			else
+			ELC_listDataModels[template_id].parent.ELC_activeTemplate = template_id
+			var temp = document.createElement("template");
+			if(temp.content != null)
 			{
 				for(var i in ELC_listDataModels[template_id].data)
 				{
 					temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
 					if(ELC_listDataModels[template_id].data[i].id)
-						temp.firstChild.id = ELC_listDataModels[template_id].data[i].id;
+						temp.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
 					else
-						temp.firstChild.id = template_id +"_"+ i;
-					ELC_listDataModels[template_id].parent.appendChild(temp.firstChild);
+						temp.content.firstChild.id = template_id +"_"+ i;
+					ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild);
 				}
 			}
-		}
-		for(var i in ELC_hooks.after_template_activate)
-		{
-			try
+			else
 			{
-				ELC_hooks.after_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_activate[i].params);
+				var possibles = ["div", "tbody"];
+				var p = 0;
+				do {
+					temp = document.createElement(possibles[p]);
+					temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.trim();
+					p++;
+				} while(temp.firstChild.tagName == null && p < possibles.length);
+				if(temp.firstChild.tagName == null)
+					console.error("Unable to dynamically create elements of type: "+ ELC_listDataModels[template_id].template.tagName);
+				else
+				{
+					for(var i in ELC_listDataModels[template_id].data)
+					{
+						temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
+						if(ELC_listDataModels[template_id].data[i].id)
+							temp.firstChild.id = ELC_listDataModels[template_id].data[i].id;
+						else
+							temp.firstChild.id = template_id +"_"+ i;
+						ELC_listDataModels[template_id].parent.appendChild(temp.firstChild);
+					}
+				}
 			}
-			catch(err)
+			for(var i in ELC_hooks.after_template_activate)
 			{
-				console.warn("Error while running 'after_template_activate' hook #"+i+" ("+ ELC_hooks.after_template_activate[i].callback.name +"): ", err);
+				try
+				{
+					ELC_hooks.after_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_activate[i].params);
+				}
+				catch(err)
+				{
+					console.warn("Error while running 'after_template_activate' hook #"+i+" ("+ ELC_hooks.after_template_activate[i].callback.name +"): ", err);
+				}
 			}
+			if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
 		}
-		if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
+		else if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
+			console.warn("Template '"+ template_id +"' is already active.");
+		else
+			console.error("Tried to activate template '"+ template_id +"' when template '"+ ELC_listDataModels[template_id].parent.ELC_activeTemplate +"' is already active. Only one template can be active on a given element at a time.");
 	}
 	else
 		console.error("Invalid template id specified in ELC_activateTemplate: "+ template_id);
@@ -118,38 +126,44 @@ function ELC_deactivateTemplate(template_id)
 {
 	if(ELC_listDataModels[template_id] != null)
 	{
-		if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
-		for(var i in ELC_hooks.before_template_deactivate)
+		if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
 		{
-			try
+			if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
+			for(var i in ELC_hooks.before_template_deactivate)
 			{
-				ELC_hooks.before_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_deactivate[i].params);
+				try
+				{
+					ELC_hooks.before_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_deactivate[i].params);
+				}
+				catch(err)
+				{
+					console.warn("Error while running 'before_template_deactivate' hook #"+i+" ("+ ELC_hooks.before_template_deactivate[i].callback.name +"): ", err);
+				}
 			}
-			catch(err)
+			for(var i in ELC_listDataModels[template_id].data)
 			{
-				console.warn("Error while running 'before_template_deactivate' hook #"+i+" ("+ ELC_hooks.before_template_deactivate[i].callback.name +"): ", err);
+				if(ELC_listDataModels[template_id].data[i].id)
+					var id = ELC_listDataModels[template_id].data[i].id;
+				else
+					var id = template_id +"_"+ i;
+				ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
 			}
+			ELC_listDataModels[template_id].parent.ELC_activeTemplate = null;
+			for(var i in ELC_hooks.after_template_deactivate)
+			{
+				try
+				{
+					ELC_hooks.after_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_deactivate[i].params);
+				}
+				catch(err)
+				{
+					console.warn("Error while running 'after_template_deactivate' hook #"+i+" ("+ ELC_hooks.after_template_deactivate[i].callback.name +"): ", err);
+				}
+			}
+			if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
 		}
-		for(var i in ELC_listDataModels[template_id].data)
-		{
-			if(ELC_listDataModels[template_id].data[i].id)
-				var id = ELC_listDataModels[template_id].data[i].id;
-			else
-				var id = template_id +"_"+ i;
-			ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
-		}
-		for(var i in ELC_hooks.after_template_deactivate)
-		{
-			try
-			{
-				ELC_hooks.after_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_deactivate[i].params);
-			}
-			catch(err)
-			{
-				console.warn("Error while running 'after_template_deactivate' hook #"+i+" ("+ ELC_hooks.after_template_deactivate[i].callback.name +"): ", err);
-			}
-		}
-		if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
+		else
+			console.warn("Template '"+ template_id +"' is not active.");
 	}
 	else
 		console.error("Invalid template id specified in ELC_deactivateTemplate: "+ template_id);
@@ -703,14 +717,14 @@ function ELC_display_page(list_container)
 	else if(list_container.ELC_current_page >= num_pages)
 		list_container.ELC_current_page = num_pages-1;
 	
-	if(list_container.ELC_current_page == 0)
+	if(list_container.ELC_current_page <= 0)
 		for(var i in list_container.ELC_pageup_buttons)
 			list_container.ELC_pageup_buttons[i].classList.remove("active");
 	else
 		for(var i in list_container.ELC_pageup_buttons)
 			list_container.ELC_pageup_buttons[i].classList.add("active");
 	
-	if(list_container.ELC_current_page == num_pages-1)
+	if(list_container.ELC_current_page >= num_pages-1)
 		for(var i in list_container.ELC_pagedown_buttons)
 			list_container.ELC_pagedown_buttons[i].classList.remove("active");
 	else

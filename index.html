@@ -33,7 +33,8 @@ var template_data = [
 	},
 ];
 ELC_setData("js_table_template", template_data, true);
-ELC_setData("js_div_template", template_data, true);
+ELC_setData("js_div_template_a", template_data, true);
+ELC_setData("js_div_template_b", template_data, false);
 </script>
 <style>
 #list_container, #js_div, div.filter-group, div.page-group {
@@ -198,11 +199,19 @@ div.sorter .sort {
 
 <h2>Javascript Generated Divs</h2>
 <div id="js_div" class="sortable filtered" data-pages-include-filtered="1">
-	<div id="js_div_template">
-		<span name="name">{{name}}</span>
-		<span name="number">{{number}}</span>
+	<div id="js_div_template_a">
+		<i name="name">{{name}}</i>
+		<i name="number">{{number}}</i>
+	</div>
+	<div id="js_div_template_b">
+		<b name="name">{{name}}</b>
+		<b name="number">{{number}}</b>
 	</div>
 </div>
+<button onclick="ELC_activateTemplate('js_div_template_a')">Activate A</button>
+<button onclick="ELC_deactivateTemplate('js_div_template_a')">Deactivate A</button>
+<button onclick="ELC_activateTemplate('js_div_template_b')">Activate B</button>
+<button onclick="ELC_deactivateTemplate('js_div_template_b')">Deactivate B</button>
 
 </body>
 </html>
