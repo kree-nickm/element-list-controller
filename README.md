@@ -5,7 +5,7 @@ Browser compatibility is not a focus of this project. Development versions are o
 
 Terminology used throughout this readme is as follows:  
 __list container__ - The DOM element that you have applied the `sortable`/`filtered`/`paged` class(es) to.  
-__list__ - If the list container is a TABLE element, then the list is the first TBODY child of it. Otherwise, the list and list container are the same thing.  
+__list__ - If the list container is a TABLE element, then a list is each TBODY child of it. Otherwise, the list and list container are the same thing.  
 __record__ - Each individual DOM element child of the list which contains the data that you wish to display.  
 __field__ - A piece of data present on all of the records, which you plan on using to sort or filter the records.  
 
