@@ -43,7 +43,7 @@ div.sort-group .sort {
 <body>
 
 <h2>Table</h2>
-<table id="demotable" class="sortable filtered paged" data-sort-transition-time="0.5s" style="display:inline-block;">
+<table id="demotable" class="sortable filterable paged" data-sort-transition-time="0.5s" style="display:inline-block;">
 	<caption>
 		<span class="pageup" style="float:left;">&larr; Previous</span>
 		<span class="pagedown" style="float:right;">Next &rarr;</span>
@@ -54,8 +54,8 @@ div.sort-group .sort {
 	</caption>
 	<thead>
 		<tr class="sort-group">
-			<th class="sort filterable" data-field="text" data-type="text">Text Column</th>
-			<th class="sort filterable sort-initial" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
+			<th class="sort" data-field="text" data-type="text">Text Column</th>
+			<th class="sort sort-initial" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -98,7 +98,7 @@ div.sort-group .sort {
 	<span class="sort" data-field="htmlfield" data-type="text">By Name</span>
 	<span class="sort" data-field="numberfield" data-type="number">By Number</span>
 </div>
-<div id="list_container" class="sortable filtered paged" data-sort-transition-time="0.5s">
+<div id="list_container" class="sortable filterable paged" data-sort-transition-time="0.5s">
 	<div id="a" data-textfield-value="Foxtrot">
 		<span data-field="htmlfield"><b>Jim</b></span>
 		<span data-field="numberfield" data-value="3">Three</span>
@@ -138,7 +138,7 @@ div.sort-group .sort {
 </div>
 
 <h2>Javascript Generated Table</h2>
-<table id="js_table" class="sortable filtered paged" data-pages-include-filtered="1">
+<table id="js_table" class="sortable filterable paged" data-pages-include-filtered="1">
 	<caption>
 		<span class="pageup" style="float:left;">&larr; Previous</span>
 		<span class="pagedown" style="float:right;">Next &rarr;</span>
@@ -152,9 +152,9 @@ div.sort-group .sort {
 	</caption>
 	<thead>
 		<tr class="sort-group">
-			<th class="sort filterable" data-field="stream" data-type="text">Stream</th>
-			<th class="sort filterable" data-field="followers" data-type="number">Followers</th>
-			<th class="sort filterable" data-field="views" data-type="number">Views</th>
+			<th class="sort" data-field="stream" data-type="text">Stream</th>
+			<th class="sort" data-field="followers" data-type="number">Followers</th>
+			<th class="sort" data-field="views" data-type="number">Views</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -178,7 +178,7 @@ div.sort-group .sort {
 	<span class="sort" data-field="stream" data-type="text">Stream</span>
 	<span class="sort" data-field="followers" data-type="number">Followers</span>
 </div>
-<div id="js_div" class="sortable filtered" data-pages-include-filtered="1">
+<div id="js_div" class="sortable filterable" data-pages-include-filtered="1">
 	<div id="js_div_template_a">
 		<i data-field="stream">{{name}}</i>
 		<i data-field="followers">{{followers}}</i>

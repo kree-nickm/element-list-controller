@@ -17,11 +17,11 @@
 	content: "\2193";
 }
 
-.filtered:not([data-pages-include-filtered]) .filtered-out {
+.filterable:not([data-pages-include-filtered]) .filtered-out {
 	display: none !important;
 }
 
-.filtered[data-pages-include-filtered] .filtered-out * {
+.filterable[data-pages-include-filtered] .filtered-out * {
 	opacity: 0.3;
 }
 

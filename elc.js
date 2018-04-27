@@ -742,7 +742,7 @@ function ELC_initialize(event)
 			all_containers.push(sortables[i]);
 	}
 	
-	var filterables = document.getElementsByClassName("filtered");
+	var filterables = document.getElementsByClassName("filterable");
 	for(var i = 0; i < filterables.length; i++)
 	{
 		if(filterables[i].ELC_list_filters == null)
@@ -751,7 +751,7 @@ function ELC_initialize(event)
 		for(var k in filterables[i].ELC_list_filters)
 		{
 			// TODO: Fix this: ELC_getListContainer gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
-			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_getListContainer(filterables[i].ELC_list_filters[k], "filtered", ["filter", "filter-group"]);
+			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_getListContainer(filterables[i].ELC_list_filters[k], "filterable", ["filter", "filter-group"]);
 			if(filterables[i].ELC_list_filters[k].ELC_list_container != filterables[i])
 			{
 				filterables[i].ELC_list_filters[k].removeEventListener("keyup", ELC_filter_change_listener);
@@ -856,7 +856,7 @@ function ELC_initialize(event)
 	var filter_lists = document.getElementsByClassName("filter-list");
 	for(var i = 0; i < filter_lists.length; i++)
 	{
-		filter_lists[i].ELC_list_container = ELC_getListContainer(filter_lists[i], "filtered", ["filter-list", "filter-group"]);
+		filter_lists[i].ELC_list_container = ELC_getListContainer(filter_lists[i], "filterable", ["filter-list", "filter-group"]);
 		if(filter_lists[i].ELC_list_container != null)
 			if(filter_lists[i].ELC_list_container.ELC_filter_list != filter_lists[i])
 				filter_lists[i].ELC_list_container.ELC_filter_list = filter_lists[i];
@@ -865,7 +865,7 @@ function ELC_initialize(event)
 	var filters = document.getElementsByClassName("filter");
 	for(var i = 0; i < filters.length; i++)
 	{
-		filters[i].ELC_list_container = ELC_getListContainer(filters[i], "filtered", ["filter", "filter-group"]);
+		filters[i].ELC_list_container = ELC_getListContainer(filters[i], "filterable", ["filter", "filter-group"]);
 		if(filters[i].ELC_list_container != null)
 		{
 			if(filters[i].dataset.field != null)

@@ -90,31 +90,14 @@ Additionally, it is likely that users will rapidly click on the sorters. To prev
 ```
 * [Back to Top](#element-list-controller)
 ### Filtering
-Add the `filtered` class to a `<table>` element (referred to as the list container). The `<table>` must utilize the `<thead>` and `<tbody>` elements to distingush the header row(s) from the table content to be filtered.
-
-The only columns in the table that can be filtered upon are the ones that are topped with a header (`<th>` or `<td>`) containing the `filterable` class. Additionally, you can also add the `data-column` attribute to these header cells to give the column a more simple identifier. Otherwise, the identifier will be based on the text content of the header, which could cause problems in certain implementations or if the text is changed later without also changing any column-specific filter inputs.
-
-To filter the list container, use `<input>` elements with the `filter` class. These filter elements can either be inside the list container element, or anywhere else on the page with an additional `data-table` element. That `data-table` element must be a jQuery selector corresponding to the list container to be filtered, ie. `data-table="#demotable"` then the list container has `id="demotable"`.
-
-By default, the filter input will search every field of a list element that corresponds to a header field marked as `filterable`. However, if you wish for a certain filter input to only search a specific field of a list element, then include the `data-column` attribute on the input element. The value of the attribute must either correspond to the `data-column` attribute of a header, or to the text content of a filterable header converted to lowercase. Usage of the `data-column` attribute is recommended.
-
-Finally, a list of currently applied filters can be displayed if an element with the `filter-list` is included inside of the list container. That element's innerHTML will be populated with `<span>` elements representing all applies filters. This is experimental for now and will be improved upon in later releases.
-
-Note that the JavaScript does not explicitly hide the list elements that are filtered out. It instead adds the `filtered-out` class to them. In order to make them hidden, you must use CSS (see below).
 #### Filtering CSS
-The `filtered-out` class will be added to any list element that does not match the currently applied filters. Use the following CSS to hide elements from view when they are not on the current page:
-```css
-.filtered .filtered-out {
-	display: none;
-}
-```
-If you are also using the `filter-list` feature, then additional classes will be appended to the child elements of the filter list. `filter-and`, `filter-or`, and `filter-not` classes will be added to any filter terms that are and-separated, or-separated, or negated, respectively.
 #### Filter Options
 For the end-user actually viewing and using the list container, the filter inputs work as follows:
 * Spaces separate each term entered into the field, and each term is considered a separate filter.
 * All terms are normally "and-separated", meaning *all* of them must be present in a list element, or that element will be filtered out.
 * Terms can be prepended with a `|` to make them "or-separated". Only one "or-separated" term must be present in a list element for it to be considered a match.
 * Terms can be negated by prepending a `-`. List items will be filtered out if they contain any negated term.
+
 * [Back to Top](#element-list-controller)
 ### Paginating
 Add the `paged` class to a `<table>` element (referred to as the list container). Anywhere within the `<table>` element, you will also need to add any or all of the following elements with the specified classes:
