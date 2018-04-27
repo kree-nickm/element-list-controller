@@ -1,17 +1,60 @@
 var ELC_debug_mode = false;
 var ELC_initialized = false;
-Element.prototype.getFirstElementByName = function(name)
+
+Element.prototype.getFirstElementByAttribute = function(attr, value)
 {
 	for(var i = 0; i < this.children.length; i++)
-		if(this.children[i].getAttribute('name') == name)
+		if(this.children[i].getAttribute(attr) == value)
 			return this.children[i];
 	for(var i = 0; i < this.children.length; i++)
 	{
-		var result = this.children[i].getFirstElementByName(name);
+		var result = this.children[i].getFirstElementByAttribute(attr, value);
 		if(result != null)
 			return result;
 	}
 	return null;
+}
+
+HTMLTableSectionElement.prototype.updatePracticalCellIndices = function()
+{
+	var matrix = [];
+	for(var i = 0; i < this.rows.length; i++)
+		matrix[i] = [];
+	for(var i = 0; i < this.rows.length; i++)
+	{
+		var row = this.rows.item(i);
+		for(var k = 0; k < row.cells.length; k++)
+		{
+			var cell = row.cells.item(k);
+			cell.practicalCellIndex = cell.cellIndex;
+			while(matrix[i][cell.practicalCellIndex])
+				cell.practicalCellIndex++;
+			for(var r = 0; r < cell.rowSpan; r++)
+				for(var c = 0; c < cell.colSpan; c++)
+					matrix[i+r][cell.practicalCellIndex+c] = 1;
+		}
+	}
+}
+
+function ELC_getFieldValue(record, field, type)
+{
+	var string = "";
+	if(record.dataset[field+"Value"] != null)
+		string = record.dataset[field+"Value"];
+	else
+	{
+		var element;
+		if(record.tagName == "TR" && !isNaN(field))
+			element = record.children[field];
+		if(element == null)
+			element = record.getFirstElementByAttribute("data-field", field);
+		if(element != null)
+			string = (element.dataset.value!=null ? element.dataset.value : (type=="html" ? element.innerHTML : element.innerText));
+	}
+	if(type == "number")
+		return parseFloat(string);
+	else
+		return string;
 }
 
 var ELC_listDataModels = {"-pre-init-":[]};
@@ -51,17 +94,7 @@ function ELC_activateTemplate(template_id)
 		if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == null)
 		{
 			if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
-			for(var i in ELC_hooks.before_template_activate)
-			{
-				try
-				{
-					ELC_hooks.before_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_activate[i].params);
-				}
-				catch(err)
-				{
-					console.warn("Error while running 'before_template_activate' hook #"+i+" ("+ ELC_hooks.before_template_activate[i].callback.name +"): ", err);
-				}
-			}
+			ELC_executeHook("before_template_activate", ELC_listDataModels[template_id]);
 			ELC_listDataModels[template_id].parent.ELC_activeTemplate = template_id
 			var temp = document.createElement("template");
 			if(temp.content != null)
@@ -73,7 +106,7 @@ function ELC_activateTemplate(template_id)
 						temp.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
 					else
 						temp.content.firstChild.id = template_id +"_"+ i;
-					ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild);
+					ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild); // TODO: use insertBefore in case the template isn't the only child for some reason
 				}
 			}
 			else
@@ -100,17 +133,7 @@ function ELC_activateTemplate(template_id)
 					}
 				}
 			}
-			for(var i in ELC_hooks.after_template_activate)
-			{
-				try
-				{
-					ELC_hooks.after_template_activate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_activate[i].params);
-				}
-				catch(err)
-				{
-					console.warn("Error while running 'after_template_activate' hook #"+i+" ("+ ELC_hooks.after_template_activate[i].callback.name +"): ", err);
-				}
-			}
+			ELC_executeHook("after_template_activate", ELC_listDataModels[template_id]);
 			if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
 		}
 		else if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
@@ -129,17 +152,7 @@ function ELC_deactivateTemplate(template_id)
 		if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
 		{
 			if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
-			for(var i in ELC_hooks.before_template_deactivate)
-			{
-				try
-				{
-					ELC_hooks.before_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.before_template_deactivate[i].params);
-				}
-				catch(err)
-				{
-					console.warn("Error while running 'before_template_deactivate' hook #"+i+" ("+ ELC_hooks.before_template_deactivate[i].callback.name +"): ", err);
-				}
-			}
+			ELC_executeHook("before_template_deactivate", ELC_listDataModels[template_id]);
 			for(var i in ELC_listDataModels[template_id].data)
 			{
 				if(ELC_listDataModels[template_id].data[i].id)
@@ -149,17 +162,7 @@ function ELC_deactivateTemplate(template_id)
 				ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
 			}
 			ELC_listDataModels[template_id].parent.ELC_activeTemplate = null;
-			for(var i in ELC_hooks.after_template_deactivate)
-			{
-				try
-				{
-					ELC_hooks.after_template_deactivate[i].callback.apply(ELC_listDataModels[template_id], ELC_hooks.after_template_deactivate[i].params);
-				}
-				catch(err)
-				{
-					console.warn("Error while running 'after_template_deactivate' hook #"+i+" ("+ ELC_hooks.after_template_deactivate[i].callback.name +"): ", err);
-				}
-			}
+			ELC_executeHook("after_template_deactivate", ELC_listDataModels[template_id]);
 			if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
 		}
 		else
@@ -187,42 +190,85 @@ function ELC_addHook(type, callback, params)
 		console.error("Invalid ELC hook: "+ type);
 }
 
+function ELC_executeHook(type, context)
+{
+	if(ELC_hooks[type] != null)
+	{
+		for(var i in ELC_hooks[type])
+		{
+			try
+			{
+				ELC_hooks[type][i].callback.apply(context, ELC_hooks[type][i].params);
+			}
+			catch(err)
+			{
+				console.warn("Error while running '"+ type +"' hook #"+i+" ("+ ELC_hooks[type][i].callback.name +"): ", err);
+			}
+		}
+	}
+	else
+		console.error("Invalid ELC hook: "+ type);
+}
+
 function ELC_update(list_container, type)
 {
-	if(ELC_debug_mode) console.time("ELC_update() execution time");
+	if(ELC_debug_mode)
+	{
+		if(type=="mutation")
+			console.log("ELC_update() called on '"+ list_container.id +"' as the result of a mutation.");
+		console.group("ELC_update() subroutine timing");
+		console.time("ELC_update() execution time");
+	}
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.disconnect();
-	for(var i in ELC_hooks.before_update)
-	{
-		try
-		{
-			ELC_hooks.before_update[i].callback.apply(list_container, ELC_hooks.before_update[i].params);
-		}
-		catch(err)
-		{
-			console.warn("Error while running 'before_update' hook #"+i+" ("+ ELC_hooks.before_update[i].callback.name +"): ", err);
-		}
-	}
+	ELC_executeHook("before_update", list_container);
 	if(type != "page" && type != "filter")
 		ELC_sort_list(list_container);
 	if(type != "page" && type != "sort")
 		ELC_apply_filter(list_container);
 	ELC_display_page(list_container);
-	for(var i in ELC_hooks.after_update)
-	{
-		try
-		{
-			ELC_hooks.after_update[i].callback.apply(list_container, ELC_hooks.after_update[i].params);
-		}
-		catch(err)
-		{
-			console.warn("Error while running 'after_update' hook #"+i+" ("+ ELC_hooks.after_update[i].callback.name +"): ", err);
-		}
-	}
+	ELC_executeHook("after_update", list_container);
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.observe(list, {childList:true});
-	if(ELC_debug_mode) console.timeEnd("ELC_update() execution time");
+	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_update() execution time"); }
+}
+
+var ELC_observerCallback = function(mutationList, mutationObserver)
+{
+	var updated = [];
+	for(var i in mutationList)
+	{
+		if(ELC_debug_mode) console.log("MutationObserver observed a mutation: ", mutationList[i]);
+		if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
+		{
+			updated.push(mutationList[i].target);
+			if(mutationList[i].target.tagName == "TBODY")
+				ELC_update(mutationList[i].target.parentNode, "mutation");
+			else
+				ELC_update(mutationList[i].target, "mutation");
+		}
+	}
+}
+
+var ELC_getListContainer = function(current, containerClass, myClasses)
+{
+	do {
+		if(current.classList.contains(containerClass))
+			return current;
+		else if(current.dataset.container != null)
+		{
+			for(var i in myClasses)
+			{
+				if(current.classList.contains(myClasses[i]))
+					var result = document.getElementById(current.dataset.container);
+				if(result != null && result.classList.contains(containerClass))
+					return result;
+			}
+		}
+		current = current.parentElement;
+	} while(current != null);
+	return null;
 }
 
 // ---- Begin sorting functions ----
@@ -232,18 +278,6 @@ function ELC_sort_event_listener(event) // TODO: If sort order is descending by 
 	{
 		console.error("Cannot find the table this sorter is meant to apply to: "+ $(this));
 		return;
-	}
-	for(var i in this.ELC_list_container.ELC_list_sorters)
-	{
-		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortup");
-		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortdown");
-		if(this.ELC_list_container.ELC_list_sorters[i].ELC_field == this.ELC_field)
-		{
-			if(this.ELC_list_container.ELC_current_sort_field == this.ELC_field && this.ELC_list_container.ELC_current_sort_reversed == false)
-				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortup");
-			else
-				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortdown");
-		}
 	}
 	this.ELC_list_container.ELC_current_sort_type = this.ELC_sort_type;
 	if(this.ELC_list_container.ELC_current_sort_field == this.ELC_field)
@@ -255,6 +289,18 @@ function ELC_sort_event_listener(event) // TODO: If sort order is descending by 
 		this.ELC_list_container.ELC_current_sort_field = this.ELC_field;
 		this.ELC_list_container.ELC_current_sort_reversed = (this.dataset.order != null && this.dataset.order.toLowerCase()[0] == "d");
 	}
+	for(var i in this.ELC_list_container.ELC_list_sorters)
+	{
+		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortup");
+		this.ELC_list_container.ELC_list_sorters[i].classList.remove("sortdown");
+		if(this.ELC_list_container.ELC_list_sorters[i].ELC_field == this.ELC_list_container.ELC_current_sort_field)
+		{
+			if(this.ELC_list_container.ELC_current_sort_reversed)
+				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortup");
+			else
+				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortdown");
+		}
+	}
 	if(event.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "sort");
 }
@@ -263,27 +309,12 @@ function ELC_sort_list(list_container)
 {
 	if(list_container.ELC_current_sort_field == null)
 		return;
-	if(ELC_debug_mode) console.time("ELC_sort_list() execution time");
+	if(ELC_debug_mode){ console.group("ELC_sort_list() subroutine timing"); console.time("ELC_sort_list() execution time"); }
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
 	for(var i = 0; i < list.children.length; i++)
 	{
-		if(list.children[i].dataset[list_container.ELC_current_sort_field+"Value"] != null)
-			var string = list.children[i].dataset[list_container.ELC_current_sort_field+"Value"];
-		else
-		{
-			if(list.children[i].tagName == "TR")
-				var element = list.children[i].children[list_container.ELC_current_sort_field];
-			else
-				var element = list.children[i].getFirstElementByName(list_container.ELC_current_sort_field);
-			if(element != null)
-				var string = (element.dataset.value!=null ? element.dataset.value : (list_container.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
-			else
-				var string = "";
-		}
-		if(list_container.ELC_current_sort_type == "number")
-			list.children[i].ELC_current_sort_value = parseFloat(string);
-		else
-			list.children[i].ELC_current_sort_value = string;
+		// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when sorting. So if the first col has a tie, sort by the second, etc.
+		list.children[i].ELC_current_sort_value = ELC_getFieldValue(list.children[i], list_container.ELC_current_sort_field, list_container.ELC_current_sort_type);
 		if(list_container.dataset.sortTransitionTime)
 		{
 			list.children[i].ELC_prevTop = list.children[i].offsetTop;
@@ -295,7 +326,7 @@ function ELC_sort_list(list_container)
 	if(ELC_debug_mode) console.timeEnd("ELC_merge_sort() execution time");
 	if(list_container.dataset.sortTransitionTime)
 	{
-		if(ELC_debug_mode) console.time("ELC_sort_list() animation execution time");
+		if(ELC_debug_mode) console.time("Animation execution time");
 		for(var i = 0; i < list.children.length; i++)
 		{
 			var element = list.children[i];
@@ -337,9 +368,9 @@ function ELC_sort_list(list_container)
 				}, 1, element);
 			}
 		}
-		if(ELC_debug_mode) console.timeEnd("ELC_sort_list() animation execution time");
+		if(ELC_debug_mode) console.timeEnd("Animation execution time");
 	}
-	if(ELC_debug_mode) console.timeEnd("ELC_sort_list() execution time");
+	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_sort_list() execution time"); }
 }
 
 function ELC_merge_sort(list, container, target)
@@ -388,42 +419,16 @@ function ELC_apply_filter(list_container)
 	for(var i = 0; i < list.children.length; i++)
 	{
 		list.children[i].classList.remove("filtered-out");
-		for(var k in list_container.ELC_active_filters.and) // & list_container.ELC_active_filters.or & list_container.ELC_active_filters.not - they should all have the same keys
+		// TODO: inverse the parent/child relationship below, so that we iterate through list_container.ELC_active_filters and use list_container.ELC_active_filters[k].and, etc
+		for(var k in list_container.ELC_active_filters.and) // & list_container.ELC_active_filters.or & list_container.ELC_active_filters.not - they should all have the same keys (see line above)
 		{
 			// k is either "" for a filter that applies to all text in the element, or the identifier of the data to be matched against
 			if(k)
-			{
-				if(list.children[i].tagName == "TR" && list_container.ELC_filter_columns[k] != null)
-				{
-					//if(list_container.ELC_current_sort_type == "number")
-					//	var text = parseFloat(list.children[i].children[list_container.ELC_filter_columns[k]].innerText);
-					//else if(list_container.ELC_current_sort_type == "html")
-					//	var text = list.children[i].children[list_container.ELC_filter_columns[k]].innerHTML;
-					//else
-						var text = list.children[i].children[list_container.ELC_filter_columns[k]].innerText;
-				}
-				else
-				{
-					if(list.children[i].dataset[k+"Value"] != null)
-						var string = list.children[i].dataset[k+"Value"];
-					else
-					{
-						var element = list.children[i].getFirstElementByName(k);
-						if(element != null)
-							//var string = (element.dataset.value!=null ? element.dataset.value : (list_container.ELC_current_sort_type=="html" ? element.innerHTML : element.innerText));
-							var string = element.innerText;
-						else
-							var string = "";
-					}
-					//if(list_container.ELC_current_sort_type == "number")
-					//	var text = parseFloat(string);
-					//else
-						var text = string;
-				}
-			}
+				var text = ELC_getFieldValue(list.children[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[k]!=null ? list_container.ELC_filter_columns[k] : k), ""); // TODO: implement types
 			else
-				var text = list.children[i].textContent;
+				var text = list.children[i].innerText;
 			text = text.toLowerCase();
+			// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when filtering. So if that header is the filter field, search all of its columns.
 			
 			var and_clause = true;
 			if(list_container.ELC_active_filters.and[k] && list_container.ELC_active_filters.and[k].length > 0)
@@ -485,9 +490,7 @@ function ELC_apply_filter(list_container)
 					}
 				}
 			}
-			
-			//if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, allFilters:list_container.ELC_active_filters, andResult:and_clause, orResult:or_clause, notResult:not_clause});
-			
+			if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, allFilters:list_container.ELC_active_filters, andResult:and_clause, orResult:or_clause, notResult:not_clause});
 			if(!and_clause || !or_clause || !not_clause)
 			{
 				list.children[i].classList.add("filtered-out");
@@ -567,7 +570,7 @@ function ELC_filter_change_listener_step2(e)
 					this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field] = this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].concat(getSelected(this.ELC_list_container.ELC_list_filters[i]));
 				}
 				break;
-			case "text": // TODO: implement "", maybe redo this filter to allow less strict searches
+			case "text": // TODO: implement "search text" support, maybe redo this filter to allow less strict searches
 				var string = this.ELC_list_container.ELC_list_filters[i].value;
 				if(string)
 				{
@@ -704,47 +707,17 @@ function ELC_display_page(list_container)
 	if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
 }
 // ---- End paginating functions ----
-var ELC_observerCallback = function(mutationList, mutationObserver)
-{
-	var updated = [];
-	for(var i in mutationList)
-	{
-		if(updated.indexOf(mutationList[i].target) == -1 && mutationList[i].type == "childList")
-		{
-			updated.push(mutationList[i].target);
-			if(mutationList[i].target.tagName == "TBODY")
-				ELC_update(mutationList[i].target.parentNode, "change");
-			else
-				ELC_update(mutationList[i].target, "change");
-		}
-	}
-}
-var ELC_getListContainer = function(current, containerClass, myClasses)
-{
-	do {
-		if(current.classList.contains(containerClass))
-			return current;
-		else if(current.dataset.container != null)
-		{
-			for(var i in myClasses)
-			{
-				if(current.classList.contains(myClasses[i]))
-					var result = document.getElementById(current.dataset.container);
-				if(result != null && result.classList.contains(containerClass))
-					return result;
-			}
-		}
-		current = current.parentElement;
-	} while(current != null);
-	return null;
-}
 
 function ELC_initialize(event)
 {
-	if(ELC_debug_mode) console.time("ELC_initialize() execution time");
+	if(ELC_debug_mode){ console.group("ELC_initialize() subroutine timing"); console.time("ELC_initialize() execution time"); }
 	
+	ELC_initialized = true; // TODO: move this back to the bottom once ELC_setData doesn't rely on it.
+	for(var i in ELC_listDataModels["-pre-init-"])
+		ELC_setData(ELC_listDataModels["-pre-init-"][i].template_id, ELC_listDataModels["-pre-init-"][i].data, ELC_listDataModels["-pre-init-"][i].auto);
+	
+	// ---- Begin setting up list containers ----
 	var all_containers = [];
-	// --- Begin sorting setup
 	var sortables = document.getElementsByClassName("sortable");
 	for(var i = 0; i < sortables.length; i++)
 	{
@@ -764,32 +737,81 @@ function ELC_initialize(event)
 			all_containers.push(sortables[i]);
 	}
 	
+	var filterables = document.getElementsByClassName("filtered");
+	for(var i = 0; i < filterables.length; i++)
+	{
+		if(filterables[i].ELC_list_filters == null)
+			filterables[i].ELC_list_filters = [];
+		filterables[i].ELC_filter_delay = setTimeout(function(){}, 1);
+		for(var k in filterables[i].ELC_list_filters)
+		{
+			// TODO: Fix this: ELC_getListContainer gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
+			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_getListContainer(filterables[i].ELC_list_filters[k], "filtered", ["filter", "filter-group"]);
+			if(filterables[i].ELC_list_filters[k].ELC_list_container != filterables[i])
+			{
+				filterables[i].ELC_list_filters[k].removeEventListener("keyup", ELC_filter_change_listener);
+				filterables[i].ELC_list_filters[k].removeEventListener("change", ELC_filter_change_listener);
+				delete filterables[i].ELC_list_filters[k];
+			}
+		}
+		if(all_containers.indexOf(filterables[i]) == -1)
+			all_containers.push(filterables[i]);
+	}
+	
+	var pages = document.getElementsByClassName("paged");
+	for(var i = 0; i < pages.length; i++)
+	{
+		if(pages[i].ELC_current_page == null)
+			pages[i].ELC_current_page = 0;
+		if(pages[i].ELC_pageup_buttons == null)
+			pages[i].ELC_pageup_buttons = [];
+		if(pages[i].ELC_pagedown_buttons == null)
+			pages[i].ELC_pagedown_buttons = [];
+		if(pages[i].ELC_currentpage_indicators == null)
+			pages[i].ELC_currentpage_indicators = [];
+		if(pages[i].ELC_maxpage_indicators == null)
+			pages[i].ELC_maxpage_indicators = [];
+		if(all_containers.indexOf(pages[i]) == -1)
+			all_containers.push(pages[i]);
+	}
+	
+	for(var i in all_containers)
+	{
+		if(all_containers[i].style.position == "static") // this is only needed if transitions are in use
+			all_containers[i].style.position = "relative";
+		if(all_containers[i].tagName == "TABLE")
+			all_containers[i].tHead.updatePracticalCellIndices();
+	}
+	
+	for(var i = 0; i < filterables.length; i++)
+	{
+		if(filterables[i].tagName == "TABLE")
+		{
+			filterables[i].ELC_filter_columns = {};
+			var filter_fields = filterables[i].getElementsByClassName("filterable");
+			for(var k = 0; k < filter_fields.length; k++)
+			{
+				if(filter_fields[k].dataset.field != null)
+					filterables[i].ELC_filter_columns[filter_fields[k].dataset.field.toLowerCase()] = filter_fields[k].practicalCellIndex;
+				else
+					filterables[i].ELC_filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].practicalCellIndex;
+			}
+		}
+	}
+	// ---- End setting up list containers ----
+	
 	var sorts = document.getElementsByClassName("sort");
 	for(var i = 0; i < sorts.length; i++)
 	{
 		sorts[i].ELC_list_container = ELC_getListContainer(sorts[i], "sortable", ["sort", "sort-group"]);
 		if(sorts[i].ELC_list_container != null)
 		{
-			if(sorts[i].ELC_list_container.tagName == "TABLE")
-			{
-				if(sorts[i].cellIndex > -1 && sorts[i].ELC_field == null)
-				{
-					var offset = 0;
-					for(var k = 0; k < sorts[i].parentElement.children.length; k++)
-					{
-						if(sorts[i].parentElement.children[k].cellIndex > -1)
-						{
-							sorts[i].parentElement.children[k].ELC_field = sorts[i].parentElement.children[k].cellIndex + offset;
-							offset += sorts[i].parentElement.children[k].colSpan - 1;
-						}
-					}
-				}
-			}
+			if(sorts[i].practicalCellIndex != null) // TODO: Verify the rest of the JavaScript file. This used to check if the container was a table, which would make it impossible for non-header-cells within the table (like in a caption or something) to be sorters. Make sure nowhere else in the script does this.
+				sorts[i].ELC_field = sorts[i].practicalCellIndex;
 			else if(sorts[i].dataset.field != null)
 				sorts[i].ELC_field = sorts[i].dataset.field;
 			else
-				sorts[i].ELC_field = (sorts[i].innerText!=null ? sorts[i].innerText : sorts[i].textContent);
-			
+				sorts[i].ELC_field = sorts[i].innerText;
 			if(sorts[i].dataset.type == "number" || sorts[i].dataset.type == "html" || sorts[i].dataset.type == "text")
 				sorts[i].ELC_sort_type = sorts[i].dataset.type;
 			else
@@ -821,42 +843,6 @@ function ELC_initialize(event)
 			initial_sorts[i].classList.remove("sort-initial");
 			// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
 		}
-	}
-	// --- End sorting setup
-	
-	// --- Begin filtering setup
-	var filterables = document.getElementsByClassName("filtered");
-	for(var i = 0; i < filterables.length; i++)
-	{
-		if(filterables[i].ELC_list_filters == null)
-			filterables[i].ELC_list_filters = [];
-		filterables[i].ELC_filter_delay = setTimeout(function(){}, 1);
-		for(var k in filterables[i].ELC_list_filters)
-		{
-			// TODO: Fix this: ELC_getListContainer gets run twice on any valid element here. Once here and once when iterating through document.getElementsByClassName("filter").
-			filterables[i].ELC_list_filters[k].ELC_list_container = ELC_getListContainer(filterables[i].ELC_list_filters[k], "filtered", ["filter", "filter-group"]);
-			if(filterables[i].ELC_list_filters[k].ELC_list_container != filterables[i])
-			{
-				filterables[i].ELC_list_filters[k].removeEventListener("keyup", ELC_filter_change_listener);
-				filterables[i].ELC_list_filters[k].removeEventListener("change", ELC_filter_change_listener);
-				delete filterables[i].ELC_list_filters[k];
-			}
-		}
-		if(filterables[i].tagName == "TABLE")
-		{
-			filterables[i].ELC_filter_columns = {};
-			var filter_fields = filterables[i].getElementsByClassName("filterable");
-			for(var k = 0; k < filter_fields.length; k++)
-			{
-				// TODO: May need to fix .cellIndex here like we did in the sorting code
-				if(filter_fields[k].dataset.field != null)
-					filterables[i].ELC_filter_columns[filter_fields[k].dataset.field.toLowerCase()] = filter_fields[k].cellIndex;
-				else
-					filterables[i].ELC_filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].cellIndex;
-			}
-		}
-		if(all_containers.indexOf(filterables[i]) == -1)
-			all_containers.push(filterables[i]);
 	}
 	
 	var filter_lists = document.getElementsByClassName("filter-list");
@@ -899,25 +885,6 @@ function ELC_initialize(event)
 				}
 			}
 		}
-	}
-	// --- End filtering setup
-	
-	// --- Begin paginating setup
-	var pages = document.getElementsByClassName("paged");
-	for(var i = 0; i < pages.length; i++)
-	{
-		if(pages[i].ELC_current_page == null)
-			pages[i].ELC_current_page = 0;
-		if(pages[i].ELC_pageup_buttons == null)
-			pages[i].ELC_pageup_buttons = [];
-		if(pages[i].ELC_pagedown_buttons == null)
-			pages[i].ELC_pagedown_buttons = [];
-		if(pages[i].ELC_currentpage_indicators == null)
-			pages[i].ELC_currentpage_indicators = [];
-		if(pages[i].ELC_maxpage_indicators == null)
-			pages[i].ELC_maxpage_indicators = [];
-		if(all_containers.indexOf(pages[i]) == -1)
-			all_containers.push(pages[i]);
 	}
 	
 	var currentpages = document.getElementsByClassName("page-current");
@@ -1014,12 +981,10 @@ function ELC_initialize(event)
 			}
 		}
 	}
-	// --- End paginating setup
 	
 	for(var i in all_containers)
 	{
-		if(all_containers[i].style.position == "static") // this is only needed if transitions are in use
-			all_containers[i].style.position = "relative";
+		ELC_update(all_containers[i], "init");
 		if(all_containers[i].tagName == "TABLE")
 		{
 			if(all_containers[i].tBodies[0].ELC_MutationObserver == null)
@@ -1032,13 +997,8 @@ function ELC_initialize(event)
 				all_containers[i].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
 			all_containers[i].ELC_MutationObserver.observe(all_containers[i], {childList:true});
 		}
-		ELC_update(all_containers[i]);
 	}
-	if(ELC_debug_mode) console.timeEnd("ELC_initialize() execution time");
-	ELC_initialized = true;
-	
-	for(var i in ELC_listDataModels["-pre-init-"])
-		ELC_setData(ELC_listDataModels["-pre-init-"][i].template_id, ELC_listDataModels["-pre-init-"][i].data, ELC_listDataModels["-pre-init-"][i].auto);
+	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_initialize() execution time"); }
 };
 
 document.addEventListener("DOMContentLoaded", ELC_initialize);

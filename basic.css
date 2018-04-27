@@ -1,5 +1,5 @@
 .sortable .sort,
-.sorter[data-container] .sort,
+.sort-group[data-container] .sort,
 .sort[data-container] {
 	cursor: pointer;
 	user-select: none;

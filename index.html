@@ -4,38 +4,6 @@
 <title>Element List Controller Demonstration</title>
 <link rel="stylesheet" type="text/css" href="basic.css"/>
 <script src="elc.js"></script>
-<script type="text/javascript">
-ELC_addHook("before_update", function(){/* do stuff */});
-var template_data = [
-	{
-		name: "clintstevens",
-		number: 4000,
-	},
-	{
-		name: "summit1g",
-		number: 15000,
-	},
-	{
-		name: "lirik",
-		number: 20000,
-	},
-	{
-		name: "sodapoppin",
-		number: 20000,
-	},
-	{
-		name: "shroud",
-		number: 40000,
-	},
-	{
-		name: "ninja",
-		number: 100000,
-	},
-];
-ELC_setData("js_table_template", template_data, true);
-ELC_setData("js_div_template_a", template_data, true);
-ELC_setData("js_div_template_b", template_data, false);
-</script>
 <style>
 #list_container, #js_div, div.filter-group, div.page-group {
 	box-sizing: border-box;
@@ -88,7 +56,6 @@ div.sort-group .sort {
 		<tr class="sort-group">
 			<th class="sort filterable" data-field="text" data-type="text">Text Column</th>
 			<th class="sort filterable" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
-			<th></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -133,24 +100,24 @@ div.sort-group .sort {
 </div>
 <div id="list_container" class="sortable filtered paged" data-sort-transition-time="0.5s">
 	<div id="a" data-textfield-value="Foxtrot">
-		<span name="htmlfield"><b>Jim</b></span>
-		<span name="numberfield" data-value="3">Three</span>
+		<span data-field="htmlfield"><b>Jim</b></span>
+		<span data-field="numberfield" data-value="3">Three</span>
 	</div>
 	<div id="b" data-textfield-value="Alpha">
-		<span name="htmlfield"><i>Dave</i></span>
-		<span name="numberfield" data-value="7">Seven</span>
+		<span data-field="htmlfield"><i>Dave</i></span>
+		<span data-field="numberfield" data-value="7">Seven</span>
 	</div>
 	<div id="c" data-textfield-value="Charlie">
-		<span name="htmlfield"><u>Allen</u></span>
-		<span name="numberfield" data-value="1">One</span>
+		<span data-field="htmlfield"><u>Allen</u></span>
+		<span data-field="numberfield" data-value="1">One</span>
 	</div>
 	<div id="d" data-textfield-value="Whiskey">
-		<span name="htmlfield"><span>Jeff</span></span>
-		<span name="numberfield" data-value="9">Nine</span>
+		<span data-field="htmlfield"><span>Jeff</span></span>
+		<span data-field="numberfield" data-value="9">Nine</span>
 	</div>
 	<div id="e" data-textfield-value="Tango">
-		<span name="htmlfield"><del>Steve</del></span>
-		<span name="numberfield" data-value="4">Four</span>
+		<span data-field="htmlfield"><del>Steve</del></span>
+		<span data-field="numberfield" data-value="4">Four</span>
 	</div>
 </div>
 <div class="filter-group" data-container="list_container">
@@ -186,13 +153,15 @@ div.sort-group .sort {
 	<thead>
 		<tr class="sort-group">
 			<th class="sort filterable" data-field="stream" data-type="text">Stream</th>
-			<th class="sort filterable" data-field="viewers" data-type="number">Viewers</th>
+			<th class="sort filterable" data-field="followers" data-type="number">Followers</th>
+			<th class="sort filterable" data-field="views" data-type="number">Views</th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr id="js_table_template">
 			<td>{{name}}</td>
-			<td data-value="{{number}}">___</td>
+			<td>{{followers}}</td>
+			<td>{{views}}</td>
 		</tr>
 	</tbody>
 </table>
@@ -200,16 +169,18 @@ div.sort-group .sort {
 <h2>Javascript Generated Divs</h2>
 <div class="sort-group" data-container="js_div">
 	<span class="sort" data-field="stream" data-type="text">Stream</span>
-	<span class="sort" data-field="viewers" data-type="number">Viewers</span>
+	<span class="sort" data-field="followers" data-type="number">Followers</span>
 </div>
 <div id="js_div" class="sortable filtered" data-pages-include-filtered="1">
 	<div id="js_div_template_a">
-		<i name="stream">{{name}}</i>
-		<i name="viewers">{{number}}</i>
+		<i data-field="stream">{{name}}</i>
+		<i data-field="followers">{{followers}}</i>
+		<i data-field="views">{{views}}</i>
 	</div>
 	<div id="js_div_template_b">
-		<b name="stream">{{name}}</b>
-		<b name="viewers">{{number}}</b>
+		<b data-field="stream">{{name}}</b>
+		<b data-field="followers">{{followers}}</b>
+		<b data-field="views">{{views}}</b>
 	</div>
 </div>
 <button onclick="ELC_activateTemplate('js_div_template_a')">Activate A</button>
@@ -217,5 +188,53 @@ div.sort-group .sort {
 <button onclick="ELC_activateTemplate('js_div_template_b')">Activate B</button>
 <button onclick="ELC_deactivateTemplate('js_div_template_b')">Deactivate B</button>
 
+<script type="text/javascript">
+ELC_addHook("before_update", function(){/* do stuff */});
+var template_data = [
+	{
+		name: "Ninja",
+		followers: 6196420,
+		views: 149983551,
+	},
+	{
+		name: "summit1g",
+		followers: 3083384,
+		views: 217097340,
+	},
+	{
+		name: "LIRIK",
+		followers: 2081214,
+		views: 239678341,
+	},
+	{
+		name: "sodapoppin",
+		followers: 1885975,
+		views: 205747123,
+	},
+	{
+		name: "shroud",
+		followers: 3059760,
+		views: 132863642,
+	},
+	{
+		name: "TimTheTatman",
+		followers: 1658682,
+		views: 75289395,
+	},
+	{
+		name: "ClintStevens",
+		followers: 212175,
+		views: 9792622,
+	},
+	{
+		name: "DrDisRespectLIVE",
+		followers: 2230946,
+		views: 68178398,
+	},
+];
+ELC_setData("js_table_template", template_data, true);
+ELC_setData("js_div_template_a", template_data, true);
+ELC_setData("js_div_template_b", template_data, false);
+</script>
 </body>
 </html>
