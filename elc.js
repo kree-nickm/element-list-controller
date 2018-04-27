@@ -234,7 +234,7 @@ function ELC_update(list_container, type)
 	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_update() execution time"); }
 }
 
-var ELC_observerCallback = function(mutationList, mutationObserver)
+function ELC_observerCallback(mutationList, mutationObserver)
 {
 	var updated = [];
 	for(var i in mutationList)
@@ -251,7 +251,7 @@ var ELC_observerCallback = function(mutationList, mutationObserver)
 	}
 }
 
-var ELC_getListContainer = function(current, containerClass, myClasses)
+function ELC_getListContainer(current, containerClass, myClasses)
 {
 	do {
 		if(current.classList.contains(containerClass))
@@ -420,18 +420,18 @@ function ELC_apply_filter(list_container)
 	if(list_container.ELC_active_filters == null)
 		return;
 	if(ELC_debug_mode) console.time("ELC_apply_filter() execution time");
-	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
-	for(var i = 0; i < list.children.length; i++)
+	var list_elements = (list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
+	for(var i = 0; i < list_elements.length; i++)
 	{
-		list.children[i].classList.remove("filtered-out");
+		list_elements[i].classList.remove("filtered-out");
 		// TODO: inverse the parent/child relationship below, so that we iterate through list_container.ELC_active_filters and use list_container.ELC_active_filters[k].and, etc
 		for(var k in list_container.ELC_active_filters.and) // & list_container.ELC_active_filters.or & list_container.ELC_active_filters.not - they should all have the same keys (see line above)
 		{
 			// k is either "" for a filter that applies to all text in the element, or the identifier of the data to be matched against
 			if(k)
-				var text = ELC_getFieldValue(list.children[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[k]!=null ? list_container.ELC_filter_columns[k] : k), ""); // TODO: implement types
+				var text = ELC_getFieldValue(list_elements[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[k]!=null ? list_container.ELC_filter_columns[k] : k), ""); // TODO: implement types
 			else
-				var text = list.children[i].innerText;
+				var text = list_elements[i].innerText;
 			text = text.toLowerCase();
 			// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when filtering. So if that header is the filter field, search all of its columns.
 			
@@ -495,10 +495,10 @@ function ELC_apply_filter(list_container)
 					}
 				}
 			}
-			if(ELC_debug_mode) console.log({element:list.children[i], field:k, textToSearch:text, allFilters:list_container.ELC_active_filters, andResult:and_clause, orResult:or_clause, notResult:not_clause});
+			if(ELC_debug_mode) console.log({element:list_elements[i], field:k, textToSearch:text, allFilters:list_container.ELC_active_filters, andResult:and_clause, orResult:or_clause, notResult:not_clause});
 			if(!and_clause || !or_clause || !not_clause)
 			{
-				list.children[i].classList.add("filtered-out");
+				list_elements[i].classList.add("filtered-out");
 				break;
 			}
 		}
@@ -575,7 +575,7 @@ function ELC_filter_change_listener_step2(e)
 					this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field] = this.ELC_list_container.ELC_active_filters.or[this.ELC_list_container.ELC_list_filters[i].ELC_field].concat(getSelected(this.ELC_list_container.ELC_list_filters[i]));
 				}
 				break;
-			case "text": // TODO: implement "search text" support, maybe redo this filter to allow less strict searches
+			case "text": // TODO: implement quoted text, maybe redo this filter to allow less strict searches
 				var string = this.ELC_list_container.ELC_list_filters[i].value;
 				if(string)
 				{
@@ -627,7 +627,7 @@ function ELC_filter_change_listener_step2(e)
 		ELC_update(this.ELC_list_container, "filter");
 }
 
-var ELC_createFilterListElement = function(filter_type, list_container, field, value)
+function ELC_createFilterListElement(filter_type, list_container, field, value)
 {
 	var span = document.createElement("span");
 	span.classList.add("filter-"+ filter_type);
