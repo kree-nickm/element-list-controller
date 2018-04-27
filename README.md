@@ -10,16 +10,16 @@ __record__ - Each individual DOM element child of the list which contains the da
 __field__ - A piece of data present on all of the records, which you plan on using to sort or filter the records.  
 
 * [Usage](#usage)
-	* <a href="#sorting">Sorting</a>
-		* [Sorters](#sorters)
-		* [Defining Field Data to Sort By](#defining-field-data-to-sort-by)
+	* [Sorting](#sorting)
+		* [Defining Fields to Sort By](#defining-fields-to-sort-by)
+		* [Defining Field Data to Sort](#defining-field-data-to-sort)
 		* [Animated Sorting](#animated-sorting)
 		* [Sorting CSS](#sorting-css)
-	* <a href="#filtering">Filtering</a>
-		* <a href="#filtering-css">CSS</a>
-		* <a href="#filtering-options">Filtering Options</a>
-	* <a href="#paginating">Paginating</a>
-		* <a href="#paginating-css">CSS</a>
+	* [Filtering](#filtering)
+		* [Filtering CSS](#filtering-css)
+		* [Filter Options](#filter-options)
+	* [Paginating](#paginating)
+		* [Paginating CSS](#paginating-css)
 	* [Templates](#templates)
 	* [Hooks](#hooks)
 ## Usage
@@ -36,7 +36,7 @@ Records added to the list dynamically after the page has loaded will be updated 
 Adding entirely new list containers to the DOM dynamically after the page has loaded is not fully supported. You can call `ELC_initialize()` after adding your new DOM elements, but this is not tested very thoroughly and should not be used in a production environment.
 ### Sorting
 To make an element a sortable list container, add the `sortable` class to it. You should also give it a unique `id` attribute.
-#### Sorters
+#### Defining Fields to Sort By
 To designate an HTML element as a clickable sorting button (sorter), add the `sort` class to it and specify which list container it applies to in one of the following ways:
 * Make the sorter element a descendant of the list container element. This should be done if and only if your list container is a TABLE element. In that case, usually your sorters will be the TH header cells within the table's THEAD element.
 * Add the `data-container` attribute to the sorter, with a value equal to the `id` of your list container.
@@ -52,7 +52,7 @@ Optionally, you can specify what type of data that the sorter will be working wi
 * __html__: The data will be sorted alphabetically by the full HTML, tags and all.
 
 Sort order can be reversed by repeatedly clicking the sorter. If you want it to be sorted in descending order on the first click instead, then add the `data-order` attribute to the sorter with any value starting with `D` (case insensitive).
-#### Defining Field Data to Sort By
+#### Defining Field Data to Sort
 The records inside your list might need to be set up with specific HTML before sorting will work. If your list container is a TABLE, then you generally do not need to do anything. When a sorting column header is clicked, the records will be sorted by the content of the TD (or TH) cells in that column according to the specifications given in the sorter. You can optionally use the `data-value` and `data-<field>-value` attributes (described below) in the cell and TR elements respectively if you need to. For non-TABLE list containers, however, the records need to have their fields specified in order for the data to be recognized. This can be done in three ways:
 * A record's HTML element can include a `data-<field>-value` attribute. Replace `<field>` with the field name specified in the desired sorter. The value of the attribute is the data used for sorting.
 * A descendant HTML element of the record's element can include a `name` attribute with the value set to the field name specified in the desired sorter. The data used for sorting will be the content of the HTML element. Unless...
@@ -98,7 +98,7 @@ Finally, a list of currently applied filters can be displayed if an element with
 
 Note that the JavaScript does not explicitly hide the list elements that are filtered out. It instead adds the `filtered-out` class to them. In order to make them hidden, you must use CSS (see below).
 <a name="filtering-css"></a>
-#### CSS
+#### Filtering CSS
 The `filtered-out` class will be added to any list element that does not match the currently applied filters. Use the following CSS to hide elements from view when they are not on the current page:
 ```css
 .filtered .filtered-out {
@@ -123,7 +123,7 @@ Add the `paged` class to a `<table>` element (referred to as the list container)
 
 The script accounts for any filtered list elements, so both features can be used simultaneously. Note that the JavaScript does not explicitly hide the list elements that are not on the current page. It instead adds the `paged-out` class to them. In order to make them hidden, you must use CSS (see below).
 <a name="paginating-css"></a>
-#### CSS
+#### Paginating CSS
 The `paged-out` class will be added to any list element that is not on the current page of the list container. Use the following CSS to hide elements from view when they are not on the current page:
 ```css
 .paged .paged-out {
