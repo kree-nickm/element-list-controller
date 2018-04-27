@@ -39,7 +39,7 @@ Records added to the list dynamically after the page has loaded will be updated 
 
 Adding entirely new list containers to the DOM dynamically after the page has loaded is not fully supported. You can call `ELC_initialize()` after adding your new DOM elements, but this is not tested very thoroughly and should not be used in a production environment.
 ### Sorting
-To make an element a sortable list container, add the `sortable` class to it. You should also give it a unique `id` attribute.
+To make an element a sortable list container, add the `sortable` class to it. You should also give it a unique `id` attribute. Sorting will also work with multiple TBODY elements if your list container happens to be a TABLE; each will be sorted separately.
 #### Defining Fields to Sort By
 To designate an HTML element as a clickable sorting button (sorter), add the `sort` class to it and specify which list container it applies to in one of the following ways:
 * Make the sorter element a descendant of the list container element. This should be done if and only if your list container is a TABLE element. In that case, usually your sorters will be the TH header cells within the table's THEAD element.
