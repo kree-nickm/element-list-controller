@@ -793,13 +793,16 @@ function ELC_initialize(event)
 		if(filterables[i].tagName == "TABLE")
 		{
 			filterables[i].ELC_filter_columns = {};
-			var filter_fields = filterables[i].getElementsByClassName("filterable");
-			for(var k = 0; k < filter_fields.length; k++)
+			for(var k = 0; k < filterables[i].tHead.rows.length; k++)
 			{
-				if(filter_fields[k].dataset.field != null)
-					filterables[i].ELC_filter_columns[filter_fields[k].dataset.field.toLowerCase()] = filter_fields[k].practicalCellIndex;
-				else
-					filterables[i].ELC_filter_columns[filter_fields[k].innerText.toLowerCase()] = filter_fields[k].practicalCellIndex;
+				for(var j = 0; j < filterables[i].tHead.rows[k].cells.length; j++)
+				{
+					var cell = filterables[i].tHead.rows[k].cells[j];
+					if(cell.dataset.field != null)
+						filterables[i].ELC_filter_columns[cell.dataset.field.toLowerCase()] = cell.practicalCellIndex;
+					else
+						filterables[i].ELC_filter_columns[cell.innerText.toLowerCase()] = cell.practicalCellIndex;
+				}
 			}
 		}
 	}
