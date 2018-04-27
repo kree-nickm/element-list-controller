@@ -78,7 +78,7 @@ Certain CSS classes will be added to certain elements as the sorting methods are
 Additionally, it is likely that users will rapidly click on the sorters. To prevent text from being awkwardly highlighted when they do this, the following CSS may be desireable as well. It also uses a pointer cursor to indicate the the sorter is an interactable element:
 ```css
 .sortable .sort,
-.sorter[data-container] .sort,
+.sort-group[data-container] .sort,
 .sort[data-container] {
 	cursor: pointer;
 	user-select: none;
