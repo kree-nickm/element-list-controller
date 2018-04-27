@@ -310,26 +310,31 @@ function ELC_sort_list(list_container)
 	if(list_container.ELC_current_sort_field == null)
 		return;
 	if(ELC_debug_mode){ console.group("ELC_sort_list() subroutine timing"); console.time("ELC_sort_list() execution time"); }
-	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
-	for(var i = 0; i < list.children.length; i++)
+	var list_collection = (list_container.tagName=="TABLE" ? list_container.tBodies : [list_container]); // I don't like creating a random array here but it's cleaner than anything else I thought of.
+	for(var k = 0; k < list_collection.length; k++)
 	{
-		// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when sorting. So if the first col has a tie, sort by the second, etc.
-		list.children[i].ELC_current_sort_value = ELC_getFieldValue(list.children[i], list_container.ELC_current_sort_field, list_container.ELC_current_sort_type);
-		if(list_container.dataset.sortTransitionTime)
-		{
-			list.children[i].ELC_prevTop = list.children[i].offsetTop;
-			list.children[i].ELC_prevLeft = list.children[i].offsetLeft;
-		}
-	}
-	if(ELC_debug_mode) console.time("ELC_merge_sort() execution time");
-	ELC_merge_sort(list.children, list_container, list);
-	if(ELC_debug_mode) console.timeEnd("ELC_merge_sort() execution time");
-	if(list_container.dataset.sortTransitionTime)
-	{
-		if(ELC_debug_mode) console.time("Animation execution time");
+		var list = list_collection[k];
 		for(var i = 0; i < list.children.length; i++)
 		{
-			var element = list.children[i];
+			// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when sorting. So if the first col has a tie, sort by the second, etc.
+			list.children[i].ELC_current_sort_value = ELC_getFieldValue(list.children[i], list_container.ELC_current_sort_field, list_container.ELC_current_sort_type);
+			if(list_container.dataset.sortTransitionTime != null)
+			{
+				list.children[i].ELC_prevTop = list.children[i].offsetTop;
+				list.children[i].ELC_prevLeft = list.children[i].offsetLeft;
+			}
+		}
+		if(ELC_debug_mode) console.time("ELC_merge_sort() execution time");
+		ELC_merge_sort(list.children, list_container, list);
+		if(ELC_debug_mode) console.timeEnd("ELC_merge_sort() execution time");
+	}
+	if(list_container.dataset.sortTransitionTime != null)
+	{
+		if(ELC_debug_mode) console.time("Animation execution time");
+		var all_elements = (list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
+		for(var i = 0; i < all_elements.length; i++)
+		{
+			var element = all_elements[i];
 			if(window.getComputedStyle(element, null).getPropertyValue("position") == "static")
 				element.style.position = "relative";
 			if(element.tagName == "TR")
@@ -652,7 +657,7 @@ function ELC_display_page(list_container)
 	for(var i = 0; i < list.children.length; i++)
 	{
 		list.children[i].classList.remove("paged-out");
-		list.children[i].classList.remove("elceven");
+		list.children[i].classList.remove("elceven"); // TODO: Move all the odd/even stuff to ELC_update, otherwise it ignores sorted/filtered tables that aren't paginated.
 		list.children[i].classList.remove("elcodd");
 		if(!list.children[i].classList.contains("filtered-out") || list_container.dataset.pagesIncludeFiltered != null)
 			rows.push(list.children[i]);

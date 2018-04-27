@@ -55,7 +55,7 @@ div.sort-group .sort {
 	<thead>
 		<tr class="sort-group">
 			<th class="sort filterable" data-field="text" data-type="text">Text Column</th>
-			<th class="sort filterable" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
+			<th class="sort filterable sort-initial" data-field="number" data-type="number" data-order="desc">Numeric Column</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -158,7 +158,14 @@ div.sort-group .sort {
 		</tr>
 	</thead>
 	<tbody>
-		<tr id="js_table_template">
+		<tr id="js_table1_template">
+			<td>{{name}}</td>
+			<td>{{followers}}</td>
+			<td>{{views}}</td>
+		</tr>
+	</tbody>
+	<tbody>
+		<tr id="js_table2_template">
 			<td>{{name}}</td>
 			<td>{{followers}}</td>
 			<td>{{views}}</td>
@@ -232,7 +239,8 @@ var template_data = [
 		views: 68178398,
 	},
 ];
-ELC_setData("js_table_template", template_data, true);
+ELC_setData("js_table1_template", template_data, true);
+ELC_setData("js_table2_template", template_data, true);
 ELC_setData("js_div_template_a", template_data, true);
 ELC_setData("js_div_template_b", template_data, false);
 </script>
