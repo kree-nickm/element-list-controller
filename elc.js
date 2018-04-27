@@ -219,7 +219,7 @@ function ELC_update(list_container, type)
 		console.group("ELC_update() subroutine timing");
 		console.time("ELC_update() execution time");
 	}
-	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
+	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container); // TODO: Support multiple tBodies.
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.disconnect();
 	ELC_executeHook("before_update", list_container);
@@ -668,7 +668,7 @@ function ELC_display_page(list_container)
 	if(list_container.ELC_current_page == null)
 		return;
 	if(ELC_debug_mode) console.time("ELC_display_page() execution time");
-	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container);
+	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container); // TODO: Support multiple tBodies.
 	var rows = [];
 	for(var i = 0; i < list.children.length; i++)
 	{
@@ -1002,7 +1002,7 @@ function ELC_initialize(event)
 	{
 		ELC_update(all_containers[i], "init");
 		if(all_containers[i].tagName == "TABLE")
-		{
+		{ // TODO: Apply observers to all tBodies.
 			if(all_containers[i].tBodies[0].ELC_MutationObserver == null)
 				all_containers[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
 			all_containers[i].tBodies[0].ELC_MutationObserver.observe(all_containers[i], {childList:true});
