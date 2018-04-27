@@ -228,10 +228,26 @@ function ELC_update(list_container, type)
 	if(type != "page" && type != "sort")
 		ELC_apply_filter(list_container);
 	ELC_display_page(list_container);
+	ELC_addAlternatingClasses(list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
 	ELC_executeHook("after_update", list_container);
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.observe(list, {childList:true});
 	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_update() execution time"); }
+}
+
+function ELC_addAlternatingClasses(all_elements)
+{
+	var alt = false;
+	for(var i = 0; i < all_elements.length; i++)
+	{
+		all_elements[i].classList.remove("elceven");
+		all_elements[i].classList.remove("elcodd");
+		if(!all_elements[i].classList.contains("paged-out") && (!all_elements[i].classList.contains("filtered-out") || list_container.dataset.pagesIncludeFiltered != null))
+		{
+			all_elements[i].classList.add(alt ? "elceven" : "elcodd");
+			alt = !alt;
+		}
+	}
 }
 
 function ELC_observerCallback(mutationList, mutationObserver)
@@ -657,8 +673,6 @@ function ELC_display_page(list_container)
 	for(var i = 0; i < list.children.length; i++)
 	{
 		list.children[i].classList.remove("paged-out");
-		list.children[i].classList.remove("elceven"); // TODO: Move all the odd/even stuff to ELC_update, otherwise it ignores sorted/filtered tables that aren't paginated.
-		list.children[i].classList.remove("elcodd");
 		if(!list.children[i].classList.contains("filtered-out") || list_container.dataset.pagesIncludeFiltered != null)
 			rows.push(list.children[i]);
 	}
@@ -694,16 +708,10 @@ function ELC_display_page(list_container)
 		for(var i in list_container.ELC_pagedown_buttons)
 			list_container.ELC_pagedown_buttons[i].classList.add("active");
 	
-	var alt = false;
 	for(var i in rows)
 	{
 		if(i < list_container.ELC_current_page*list_container.ELC_perpage || i >= (list_container.ELC_current_page+1)*list_container.ELC_perpage)
 			rows[i].classList.add("paged-out");
-		else
-		{
-			rows[i].classList.add(alt ? "elceven" : "elcodd");
-			alt = !alt;
-		}
 	}
 	for(var i in list_container.ELC_currentpage_indicators)
 		list_container.ELC_currentpage_indicators[i].innerHTML = (list_container.ELC_current_page+1);
