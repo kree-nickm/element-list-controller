@@ -272,7 +272,7 @@ var ELC_getListContainer = function(current, containerClass, myClasses)
 }
 
 // ---- Begin sorting functions ----
-function ELC_sort_event_listener(event) // TODO: If sort order is descending by default, sortup should be applied instead of sortdown.
+function ELC_sort_event_listener(event)
 {
 	if(this.ELC_list_container == null)
 	{
