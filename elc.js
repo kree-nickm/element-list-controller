@@ -438,7 +438,7 @@ function ELC_compare(a, b, container)
 	if(container.ELC_current_sort_type == "number")
 		return (container.ELC_current_sort_reversed?-1:1) * (b.ELC_current_sort_value - a.ELC_current_sort_value);
 	else
-		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.localeCompare(a.ELC_current_sort_value);
+		return (container.ELC_current_sort_reversed?-1:1) * b.ELC_current_sort_value.toString().localeCompare(a.ELC_current_sort_value.toString());
 }
 // ---- End sorting functions ----
 
@@ -460,7 +460,7 @@ function ELC_apply_filter(list_container)
 				var text = ELC_getFieldValue(list_elements[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[k]!=null ? list_container.ELC_filter_columns[k] : k), ""); // TODO: implement types
 			else
 				var text = list_elements[i].innerText; // TODO: This ignores data-value and will only check the visible text. Is that ok?
-			text = text.toLowerCase();
+			text = text.toString().toLowerCase();
 			// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when filtering. So if that header is the filter field, search all of its columns.
 			
 			var and_clause = true;
