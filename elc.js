@@ -712,7 +712,7 @@ function ELC_display_page(list_container)
 	for(var i in rows)
 	{
 		if(i < list_container.ELC_current_page*list_container.ELC_perpage || i >= (list_container.ELC_current_page+1)*list_container.ELC_perpage)
-			rows[i].classList.add("paged-out");
+			rows[i].classList.add("paged-out"); // TODO: paged-out and filtered-out classes will never appear together on an element unless data-pages-include-filtered is true. While this doesn't matter if the only CSS applied to them is to make them display:none, it is still technically a bug and might break anyone's plan to reference those classes in their app for their own purposes.
 	}
 	for(var i in list_container.ELC_currentpage_indicators)
 		list_container.ELC_currentpage_indicators[i].innerHTML = (list_container.ELC_current_page+1);
