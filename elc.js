@@ -76,7 +76,7 @@ function ELC_setData(template_id, data, auto)
 		var template = document.getElementById(template_id);
 		if(template != null)
 		{
-			if(Array.isArray(data))
+			if(typeof data == "object")
 			{
 				ELC_listDataModels[template_id] = {parent:template.parentNode,template:template,data:data};
 				template.parentNode.removeChild(template);
@@ -113,10 +113,7 @@ function ELC_activateTemplate(template_id)
 				for(var i in ELC_listDataModels[template_id].data)
 				{
 					temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
-					if(ELC_listDataModels[template_id].data[i].id)
-						temp.content.firstChild.id = ELC_listDataModels[template_id].data[i].id;
-					else
-						temp.content.firstChild.id = template_id +"_"+ i;
+					temp.content.firstChild.id = template_id +"_"+ i;
 					ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild); // TODO: use insertBefore in case the template isn't the only child for some reason
 				}
 			}
@@ -136,10 +133,7 @@ function ELC_activateTemplate(template_id)
 					for(var i in ELC_listDataModels[template_id].data)
 					{
 						temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
-						if(ELC_listDataModels[template_id].data[i].id)
-							temp.firstChild.id = ELC_listDataModels[template_id].data[i].id;
-						else
-							temp.firstChild.id = template_id +"_"+ i;
+						temp.firstChild.id = template_id +"_"+ i;
 						ELC_listDataModels[template_id].parent.appendChild(temp.firstChild);
 					}
 				}
@@ -166,10 +160,7 @@ function ELC_deactivateTemplate(template_id)
 			ELC_executeHook("before_template_deactivate", ELC_listDataModels[template_id]);
 			for(var i in ELC_listDataModels[template_id].data)
 			{
-				if(ELC_listDataModels[template_id].data[i].id)
-					var id = ELC_listDataModels[template_id].data[i].id;
-				else
-					var id = template_id +"_"+ i;
+				var id = template_id +"_"+ i;
 				ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
 			}
 			ELC_listDataModels[template_id].parent.ELC_activeTemplate = null;
