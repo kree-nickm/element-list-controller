@@ -1,14 +1,14 @@
 var ELC_debug_mode = false;
 var ELC_initialized = false;
 
-Element.prototype.getFirstElementByAttribute = function(attr, value)
+Element.prototype.getFirstElementWithData = function(data, value)
 {
 	for(var i = 0; i < this.children.length; i++)
-		if(this.children[i].getAttribute(attr) == value)
+		if(this.children[i].dataset[data] != null && this.children[i].dataset[data] == value)
 			return this.children[i];
 	for(var i = 0; i < this.children.length; i++)
 	{
-		var result = this.children[i].getFirstElementByAttribute(attr, value);
+		var result = this.children[i].getFirstElementWithData(data, value);
 		if(result != null)
 			return result;
 	}
@@ -39,6 +39,17 @@ HTMLTableSectionElement.prototype.updatePracticalCellIndices = function()
 function ELC_getFieldValue(record, field, type)
 {
 	var string = "";
+	if(record.parentNode.ELC_activeTemplate != null)
+	{
+		// TODO: Maybe let them choose if they want to pull from template data rather than assuming?
+		// TODO: Doesn't work with most tables, because field name gets converted to cell index. However, table cell reading should still be pretty fast since it should never need to call getFirstElementWithData.
+		var data = ELC_listDataModels[record.parentNode.ELC_activeTemplate].data[record.id.substring(record.parentNode.ELC_activeTemplate.length+1)];
+		if(data != null && data[field] != null)
+		{
+			if(ELC_debug_mode) console.log("Using '"+ record.parentNode.ELC_activeTemplate +"' template value.");
+			return data[field];
+		}
+	}
 	if(record.dataset[field+"Value"] != null)
 		string = record.dataset[field+"Value"];
 	else
@@ -47,7 +58,7 @@ function ELC_getFieldValue(record, field, type)
 		if(record.tagName == "TR" && !isNaN(field))
 			element = record.children[field];
 		if(element == null)
-			element = record.getFirstElementByAttribute("data-field", field);
+			element = record.getFirstElementWithData("field", field);
 		if(element != null)
 			string = (element.dataset.value!=null ? element.dataset.value : (type=="html" ? element.innerHTML : element.innerText));
 	}
@@ -448,7 +459,7 @@ function ELC_apply_filter(list_container)
 			if(k)
 				var text = ELC_getFieldValue(list_elements[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[k]!=null ? list_container.ELC_filter_columns[k] : k), ""); // TODO: implement types
 			else
-				var text = list_elements[i].innerText;
+				var text = list_elements[i].innerText; // TODO: This ignores data-value and will only check the visible text. Is that ok?
 			text = text.toLowerCase();
 			// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when filtering. So if that header is the filter field, search all of its columns.
 			
