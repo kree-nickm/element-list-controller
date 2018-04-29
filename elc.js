@@ -228,15 +228,16 @@ function ELC_update(list_container, type)
 	if(type != "page" && type != "sort")
 		ELC_apply_filter(list_container);
 	ELC_display_page(list_container);
-	ELC_addAlternatingClasses(list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
+	ELC_addAlternatingClasses(list_container);
 	ELC_executeHook("after_update", list_container);
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.observe(list, {childList:true});
 	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_update() execution time"); }
 }
 
-function ELC_addAlternatingClasses(all_elements)
+function ELC_addAlternatingClasses(list_container)
 {
+	var all_elements = list_container.tagName=="TABLE" ? list_container.rows : list_container.children;
 	var alt = false;
 	for(var i = 0; i < all_elements.length; i++)
 	{
