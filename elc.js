@@ -577,33 +577,34 @@ function ELC_filter_change_listener_step2(e)
 	this.ELC_list_container.ELC_active_filters = {};
 	for(var i = 0; i < this.ELC_list_container.ELC_list_filters.length; i++)
 	{
+		if(this.ELC_list_container.ELC_list_filters[i].value.length == 0)
+			continue;
 		var field = this.ELC_list_container.ELC_list_filters[i].ELC_field;
 		if(this.ELC_list_container.ELC_active_filters[field] == null)
-			this.ELC_list_container.ELC_active_filters[field] = {
-				and: {},
-				or: {},
-				not: {},
-			};
+			this.ELC_list_container.ELC_active_filters[field] = {};
 		switch(this.ELC_list_container.ELC_list_filters[i].type)
 		{
 			case "checkbox":
-				if(this.ELC_list_container.ELC_list_filters[i].checked && this.ELC_list_container.ELC_list_filters[i].value.length > 0)
+				if(this.ELC_list_container.ELC_list_filters[i].checked)
 				{
+					if(this.ELC_list_container.ELC_active_filters[field].or == null)
+						this.ELC_list_container.ELC_active_filters[field].or = {};
 					this.ELC_list_container.ELC_active_filters[field].or[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
 				}
 				break;
 			case "radio":
-				if(this.ELC_list_container.ELC_list_filters[i].checked && this.ELC_list_container.ELC_list_filters[i].value.length > 0)
+				if(this.ELC_list_container.ELC_list_filters[i].checked)
 				{
+					if(this.ELC_list_container.ELC_active_filters[field].and == null)
+						this.ELC_list_container.ELC_active_filters[field].and = {};
 					this.ELC_list_container.ELC_active_filters[field].and[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
 				}
 				break;
 			case "number":
 			case "select-one":
-				if(this.ELC_list_container.ELC_list_filters[i].value.length > 0)
-				{
-					this.ELC_list_container.ELC_active_filters[field].and[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
-				}
+				if(this.ELC_list_container.ELC_active_filters[field].and == null)
+					this.ELC_list_container.ELC_active_filters[field].and = {};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
 				break;
 			case "select-multiple":
 				if(this.ELC_list_container.ELC_list_filters[i].selectedOptions != null)
@@ -618,6 +619,8 @@ function ELC_filter_change_listener_step2(e)
 				for(var k = 0; k < selectedOptions.length; k++)
 					if(selectedOptions[k].value != null && selectedOptions[k].value.length > 0)
 					{
+						if(this.ELC_list_container.ELC_active_filters[field].or == null)
+							this.ELC_list_container.ELC_active_filters[field].or = {};
 						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {value:selectedOptions[k].value};
 					}
 				break;
@@ -630,18 +633,26 @@ function ELC_filter_change_listener_step2(e)
 					{
 						if(strings[s][0] == "+" && strings[s].length > 1)
 						{
+							if(this.ELC_list_container.ELC_active_filters[field].and == null)
+								this.ELC_list_container.ELC_active_filters[field].and = {};
 							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {value:strings[s].substr(1)};
 						}
 						else if(strings[s][0] == "|" && strings[s].length > 1)
 						{
+							if(this.ELC_list_container.ELC_active_filters[field].or == null)
+								this.ELC_list_container.ELC_active_filters[field].or = {};
 							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {value:strings[s].substr(1)};
 						}
 						else if(strings[s][0] == "-" && strings[s].length > 1)
 						{
+							if(this.ELC_list_container.ELC_active_filters[field].not == null)
+								this.ELC_list_container.ELC_active_filters[field].not = {};
 							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {value:strings[s].substr(1)};
 						}
 						else if(strings[s].length > 0)
 						{
+							if(this.ELC_list_container.ELC_active_filters[field].and == null)
+								this.ELC_list_container.ELC_active_filters[field].and = {};
 							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {value:strings[s]};
 						}
 					}
