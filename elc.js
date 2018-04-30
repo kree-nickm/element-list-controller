@@ -36,6 +36,23 @@ HTMLTableSectionElement.prototype.updatePracticalCellIndices = function()
 	}
 }
 
+function ELC_logFunctionExecution(open)
+{
+	if(ELC_debug_mode && ELC_logFunctionExecution.caller != null)
+	{
+		if(open)
+		{
+			console.time(ELC_logFunctionExecution.caller.name +" execution time");
+			console.group(ELC_logFunctionExecution.caller.name +" logging");
+		}
+		else
+		{
+			console.timeEnd(ELC_logFunctionExecution.caller.name +" execution time");
+			console.groupEnd();
+		}
+	}
+}
+
 function ELC_getFieldValue(record, field, type)
 {
 	var string = "";
@@ -104,7 +121,7 @@ function ELC_activateTemplate(template_id)
 	{
 		if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == null)
 		{
-			if(ELC_debug_mode) console.time("ELC_activateTemplate() execution time");
+			ELC_logFunctionExecution(true);
 			ELC_executeHook("before_template_activate", ELC_listDataModels[template_id]);
 			ELC_listDataModels[template_id].parent.ELC_activeTemplate = template_id
 			var temp = document.createElement("template");
@@ -139,7 +156,7 @@ function ELC_activateTemplate(template_id)
 				}
 			}
 			ELC_executeHook("after_template_activate", ELC_listDataModels[template_id]);
-			if(ELC_debug_mode) console.timeEnd("ELC_activateTemplate() execution time");
+			ELC_logFunctionExecution(false);
 		}
 		else if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
 			console.warn("Template '"+ template_id +"' is already active.");
@@ -156,7 +173,7 @@ function ELC_deactivateTemplate(template_id)
 	{
 		if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
 		{
-			if(ELC_debug_mode) console.time("ELC_deactivateTemplate() execution time");
+			ELC_logFunctionExecution(true);
 			ELC_executeHook("before_template_deactivate", ELC_listDataModels[template_id]);
 			for(var i in ELC_listDataModels[template_id].data)
 			{
@@ -165,7 +182,7 @@ function ELC_deactivateTemplate(template_id)
 			}
 			ELC_listDataModels[template_id].parent.ELC_activeTemplate = null;
 			ELC_executeHook("after_template_deactivate", ELC_listDataModels[template_id]);
-			if(ELC_debug_mode) console.timeEnd("ELC_deactivateTemplate() execution time");
+			ELC_logFunctionExecution(false);
 		}
 		else
 			console.warn("Template '"+ template_id +"' is not active.");
@@ -218,8 +235,7 @@ function ELC_update(list_container, type)
 	{
 		if(type=="mutation")
 			console.log("ELC_update() called on '"+ list_container.id +"' as the result of a mutation.");
-		console.group("ELC_update() subroutine timing");
-		console.time("ELC_update() execution time");
+		ELC_logFunctionExecution(true);
 	}
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container); // TODO: Support multiple tBodies.
 	if(list.ELC_MutationObserver != null)
@@ -234,7 +250,7 @@ function ELC_update(list_container, type)
 	ELC_executeHook("after_update", list_container);
 	if(list.ELC_MutationObserver != null)
 		list.ELC_MutationObserver.observe(list, {childList:true});
-	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_update() execution time"); }
+	ELC_logFunctionExecution(false);
 }
 
 function ELC_addAlternatingClasses(list_container)
@@ -328,7 +344,7 @@ function ELC_sort_list(list_container)
 {
 	if(list_container.ELC_current_sort_field == null)
 		return;
-	if(ELC_debug_mode){ console.group("ELC_sort_list() subroutine timing"); console.time("ELC_sort_list() execution time"); }
+	ELC_logFunctionExecution(true);
 	var list_collection = (list_container.tagName=="TABLE" ? list_container.tBodies : [list_container]); // I don't like creating a random array here but it's cleaner than anything else I thought of.
 	for(var k = 0; k < list_collection.length; k++)
 	{
@@ -394,7 +410,7 @@ function ELC_sort_list(list_container)
 		}
 		if(ELC_debug_mode) console.timeEnd("Animation execution time");
 	}
-	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_sort_list() execution time"); }
+	ELC_logFunctionExecution(false);
 }
 
 function ELC_merge_sort(list, container, target)
@@ -438,7 +454,7 @@ function ELC_apply_filter(list_container)
 {
 	if(list_container.ELC_active_filters == null)
 		return;
-	if(ELC_debug_mode) console.time("ELC_apply_filter() execution time");
+	ELC_logFunctionExecution(true);
 	var list_elements = (list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
 	for(var i = 0; i < list_elements.length; i++)
 	{
@@ -522,7 +538,7 @@ function ELC_apply_filter(list_container)
 			}
 		}
 	}
-	if(ELC_debug_mode) console.timeEnd("ELC_apply_filter() execution time");
+	ELC_logFunctionExecution(false);
 }
 
 function ELC_filter_change_listener(e)
@@ -541,7 +557,7 @@ function ELC_filter_change_listener(e)
 
 function ELC_filter_change_listener_step2(e)
 {
-	if(ELC_debug_mode) console.time("ELC_filter_change_listener_step2() execution time");
+	ELC_logFunctionExecution(true);
 	// TODO: save the current filters instead of rebuild from scratch if they haven't changed
 	this.ELC_list_container.ELC_active_filters = {
 		and: {},
@@ -641,7 +657,7 @@ function ELC_filter_change_listener_step2(e)
 				for(var k in this.ELC_list_container.ELC_active_filters.not[i])
 					ELC_createFilterListElement("not", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters.not[i][k]);
 	}
-	if(ELC_debug_mode) console.timeEnd("ELC_filter_change_listener_step2() execution time");
+	ELC_logFunctionExecution(false);
 	if(e.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "filter");
 }
@@ -670,7 +686,7 @@ function ELC_display_page(list_container)
 {
 	if(list_container.ELC_current_page == null)
 		return;
-	if(ELC_debug_mode) console.time("ELC_display_page() execution time");
+	ELC_logFunctionExecution(true);
 	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container); // TODO: Support multiple tBodies.
 	var rows = [];
 	for(var i = 0; i < list.children.length; i++)
@@ -684,7 +700,7 @@ function ELC_display_page(list_container)
 	if(!list_container.ELC_perpage)
 	{
 		console.error("Error when paginating list: could not calculate page count because perpage value was not properly set ("+list_container.ELC_perpage+").");
-		if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
+		ELC_logFunctionExecution(false);
 		return;
 	}
 	else if(!rows.length)
@@ -720,13 +736,13 @@ function ELC_display_page(list_container)
 		list_container.ELC_currentpage_indicators[i].innerHTML = (list_container.ELC_current_page+1);
 	for(var i in list_container.ELC_maxpage_indicators)
 		list_container.ELC_maxpage_indicators[i].innerHTML = num_pages;
-	if(ELC_debug_mode) console.timeEnd("ELC_display_page() execution time");
+	ELC_logFunctionExecution(false);
 }
 // ---- End paginating functions ----
 
 function ELC_initialize(event)
 {
-	if(ELC_debug_mode){ console.group("ELC_initialize() subroutine timing"); console.time("ELC_initialize() execution time"); }
+	ELC_logFunctionExecution(true);
 	
 	ELC_initialized = true; // TODO: move this back to the bottom once ELC_setData doesn't rely on it.
 	for(var i in ELC_listDataModels["-pre-init-"])
@@ -1017,7 +1033,7 @@ function ELC_initialize(event)
 			all_containers[i].ELC_MutationObserver.observe(all_containers[i], {childList:true});
 		}
 	}
-	if(ELC_debug_mode){ console.groupEnd(); console.timeEnd("ELC_initialize() execution time"); }
+	ELC_logFunctionExecution(false);
 };
 
 document.addEventListener("DOMContentLoaded", ELC_initialize);
