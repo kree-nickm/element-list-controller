@@ -36,18 +36,21 @@ HTMLTableSectionElement.prototype.updatePracticalCellIndices = function()
 	}
 }
 
-function ELC_logFunctionExecution(open)
+function ELC_logFunctionExecution(begin, closed, extra)
 {
 	if(ELC_debug_mode && ELC_logFunctionExecution.caller != null)
 	{
-		if(open)
+		if(begin)
 		{
-			console.time(ELC_logFunctionExecution.caller.name +" execution time");
-			console.group(ELC_logFunctionExecution.caller.name +" logging");
+			console.time(ELC_logFunctionExecution.caller.name + (extra!=null ? " ("+extra+")" : "") +" execution time");
+			if(closed)
+				console.groupCollapsed(ELC_logFunctionExecution.caller.name +" logging"+ (extra!=null ? ": "+extra : ""));
+			else
+				console.group(ELC_logFunctionExecution.caller.name +" logging"+ (extra!=null ? ": "+extra : ""));
 		}
 		else
 		{
-			console.timeEnd(ELC_logFunctionExecution.caller.name +" execution time");
+			console.timeEnd(ELC_logFunctionExecution.caller.name + (extra!=null ? " ("+extra+")" : "") +" execution time");
 			console.groupEnd();
 		}
 	}
@@ -359,9 +362,9 @@ function ELC_sort_list(list_container)
 				list.children[i].ELC_prevLeft = list.children[i].offsetLeft;
 			}
 		}
-		if(ELC_debug_mode) console.time("ELC_merge_sort() execution time");
+		ELC_logFunctionExecution(true, false, "actual merge sort");
 		ELC_merge_sort(list.children, list_container, list);
-		if(ELC_debug_mode) console.timeEnd("ELC_merge_sort() execution time");
+		ELC_logFunctionExecution(false, false, "actual merge sort");
 	}
 	if(list_container.dataset.sortTransitionTime != null)
 	{
@@ -458,10 +461,12 @@ function ELC_apply_filter(list_container)
 	var list_elements = (list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
 	for(var i = 0; i < list_elements.length; i++)
 	{
+		ELC_logFunctionExecution(true, true, "element#"+i);
 		list_elements[i].classList.remove("filtered-out");
 		// TODO: inverse the parent/child relationship below, so that we iterate through list_container.ELC_active_filters and use list_container.ELC_active_filters[k].and, etc
 		for(var k in list_container.ELC_active_filters.and) // & list_container.ELC_active_filters.or & list_container.ELC_active_filters.not - they should all have the same keys (see line above)
 		{
+			ELC_logFunctionExecution(true, true, "element#"+i+":filter='"+k+"'");
 			// k is either "" for a filter that applies to all text in the element, or the identifier of the data to be matched against
 			if(k)
 				var text = ELC_getFieldValue(list_elements[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[k]!=null ? list_container.ELC_filter_columns[k] : k), ""); // TODO: implement types
@@ -531,12 +536,14 @@ function ELC_apply_filter(list_container)
 				}
 			}
 			if(ELC_debug_mode) console.log({element:list_elements[i], field:k, textToSearch:text, allFilters:list_container.ELC_active_filters, andResult:and_clause, orResult:or_clause, notResult:not_clause});
+			ELC_logFunctionExecution(false, true, "element#"+i+":filter='"+k+"'");
 			if(!and_clause || !or_clause || !not_clause)
 			{
 				list_elements[i].classList.add("filtered-out");
 				break;
 			}
 		}
+		ELC_logFunctionExecution(false, true, "element#"+i);
 	}
 	ELC_logFunctionExecution(false);
 }
