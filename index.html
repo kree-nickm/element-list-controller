@@ -84,13 +84,14 @@ div.sort-group .sort {
 	</caption>
 	<tr>
 		<th>Text Column</th>
-		<td><input class="filter" data-container="demotable" data-field="text" type="text" placeholder="Search..."/></td>
+		<td><input class="filter" data-container="demotable" data-field="text" data-controller="do_filters" type="text" placeholder="Search..."/></td>
 	</tr>
 	<tr>
 		<th>Numeric Column</th>
-		<td><input class="filter" data-container="demotable" data-field="number" type="number" placeholder="Search..."/></td>
+		<td><input class="filter" data-container="demotable" data-field="number" data-controller="do_filters" type="number" placeholder="Search..."/></td>
 	</tr>
 </table>
+<button id="do_filters">Apply</button>
 
 <h2>Arbitrary HTML</h2>
 <div class="sort-group" data-container="list_container">

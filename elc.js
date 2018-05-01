@@ -918,12 +918,30 @@ function ELC_initialize(event)
 				filters[i].ELC_field = filters[i].dataset.field;
 			else
 				filters[i].ELC_field = "";
-			
+			if(filters[i].dataset.controller != null)
+			{
+				var controller = document.getElementById(filters[i].dataset.controller);
+				if(controller != null)
+				{
+					filters[i].ELC_controller = controller;
+					if(controller.ELC_filters == null)
+						controller.ELC_filters = [filters[i]];
+					else
+						controller.ELC_filters.push(filters[i]);
+					controller.addEventListener("click", function(e){
+						for(var k in this.ELC_filters)
+							ELC_filter_change_listener.call(this.ELC_filters[k], e);
+					});
+				}
+			}
 			if(filters[i].ELC_list_container.ELC_list_filters.indexOf(filters[i]) == -1)
 			{
 				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
-				filters[i].addEventListener("keyup", ELC_filter_change_listener);
-				filters[i].addEventListener("change", ELC_filter_change_listener);
+				if(filters[i].ELC_controller == null)
+				{
+					filters[i].addEventListener("keyup", ELC_filter_change_listener);
+					filters[i].addEventListener("change", ELC_filter_change_listener);
+				}
 				if(filters[i].value != "")
 				{
 					try
