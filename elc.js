@@ -928,10 +928,8 @@ function ELC_initialize(event)
 						controller.ELC_filters = [filters[i]];
 					else
 						controller.ELC_filters.push(filters[i]);
-					controller.addEventListener("click", function(e){
-						for(var k in this.ELC_filters)
-							ELC_filter_change_listener.call(this.ELC_filters[k], e);
-					});
+					controller.ELC_list_container = filters[i].ELC_list_container;
+					controller.addEventListener("click", ELC_filter_change_listener);
 				}
 			}
 			if(filters[i].ELC_list_container.ELC_list_filters.indexOf(filters[i]) == -1)
@@ -942,17 +940,19 @@ function ELC_initialize(event)
 					filters[i].addEventListener("keyup", ELC_filter_change_listener);
 					filters[i].addEventListener("change", ELC_filter_change_listener);
 				}
-				if(filters[i].value != "")
+				if(filters[i].value != "") // TODO: Doesn't work with controller.
 				{
 					try
 					{
-						filters[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+						//filters[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+						ELC_filter_change_listener.call(filters[i], new CustomEvent("change", {detail:"noupdate"}));
 					}
 					catch(err)
 					{
 						var event = document.createEvent("customevent");
 						event.initCustomEvent("change", false, false, {detail:"noupdate"})
-						filters[i].dispatchEvent(event);
+						//filters[i].dispatchEvent(event);
+						ELC_filter_change_listener.call(filters[i], event);
 					}
 				}
 			}
