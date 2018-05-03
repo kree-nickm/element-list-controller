@@ -1,5 +1,6 @@
 var ELC_debug_mode = false;
 var ELC_initialized = false;
+// TODO: Use asyncronous javascript where possible.
 
 Element.prototype.getFirstElementWithData = function(data, value)
 {
@@ -38,7 +39,7 @@ HTMLTableSectionElement.prototype.updatePracticalCellIndices = function()
 
 if(!HTMLSelectElement.prototype.hasOwnProperty("selectedOptions"))
 {
-	HTMLSelectElement.prototype.getSelectedOptions = function()
+	HTMLElement.prototype.getSelectedOptions = function()
 	{
 		var result = [];
 		for(var k = 0; k < this.children.length; k++)
@@ -46,7 +47,23 @@ if(!HTMLSelectElement.prototype.hasOwnProperty("selectedOptions"))
 			if(this.children[k].tagName == "OPTION" && this.children[k].selected && this.children[k].value.length > 0)
 				result.push(this.children[k]);
 			else if(this.children[k].children.length > 0)
-				result = result.concat(getSelected(this.children[k]));
+			{
+				result = result.concat(this.children[k].getSelectedOptions());
+			}
+		}
+		return result;
+	}
+	HTMLElement.prototype.getOptions = function()
+	{
+		var result = [];
+		for(var k = 0; k < this.children.length; k++)
+		{
+			if(this.children[k].tagName == "OPTION")
+				result.push(this.children[k]);
+			else if(this.children[k].children.length > 0)
+			{
+				result = result.concat(this.children[k].getOptions());
+			}
 		}
 		return result;
 	}
@@ -556,6 +573,43 @@ function ELC_apply_filter(list_container)
 	ELC_logFunctionExecution(false);
 }
 
+function ELC_filter_controller_listener(e)
+{
+	var containers = {};
+	for(var i in this.ELC_filters)
+	{
+		if(this.ELC_filters[i].ELC_clearer == this)
+		{
+			if(this.ELC_filters[i].type == "checkbox" || this.ELC_filters[i].type == "radio")
+				this.ELC_filters[i].checked = (this.ELC_filters[i].value == "");
+			else
+				this.ELC_filters[i].value = "";
+		}
+		if(this.ELC_filters[i].ELC_resetter == this)
+		{
+			if(this.ELC_filters[i].type == "select-multiple") // TODO: IE11 compat (I guess...)
+			{
+				for(var k = 0; k < this.ELC_filters[i].options.length; k++)
+					this.ELC_filters[i].options[k].selected = this.ELC_filters[i].options[k].ELC_resetValue;
+			}
+			else if(this.ELC_filters[i].type == "checkbox" || this.ELC_filters[i].type == "radio")
+				this.ELC_filters[i].checked = this.ELC_filters[i].ELC_resetValue;
+			else
+				this.ELC_filters[i].value = this.ELC_filters[i].ELC_resetValue;
+		}
+		if(this.ELC_filters[i].ELC_applier == this || this.ELC_filters[i].ELC_applier == null)
+		{
+			if(containers[this.ELC_filters[i].ELC_list_container] == null)
+				containers[this.ELC_filters[i].ELC_list_container] = {ELC_list_container:this.ELC_filters[i].ELC_list_container, ELC_filters:[]};
+			containers[this.ELC_filters[i].ELC_list_container].ELC_filters.push(this.ELC_filters[i]);
+		}
+	}
+	for(var i in containers)
+	{
+		ELC_filter_change_listener.call(containers[i], e);
+	}
+}
+
 function ELC_filter_change_listener(e)
 {
 	if(this.ELC_list_container == null)
@@ -918,29 +972,63 @@ function ELC_initialize(event)
 				filters[i].ELC_field = filters[i].dataset.field;
 			else
 				filters[i].ELC_field = "";
-			if(filters[i].dataset.controller != null)
+			if(filters[i].dataset.applyControl != null)
 			{
-				var controller = document.getElementById(filters[i].dataset.controller);
+				var controller = document.getElementById(filters[i].dataset.applyControl);
 				if(controller != null)
 				{
-					filters[i].ELC_controller = controller;
+					filters[i].ELC_applier = controller;
 					if(controller.ELC_filters == null)
 						controller.ELC_filters = [filters[i]];
 					else
 						controller.ELC_filters.push(filters[i]);
-					controller.ELC_list_container = filters[i].ELC_list_container;
-					controller.addEventListener("click", ELC_filter_change_listener);
+					controller.addEventListener("click", ELC_filter_controller_listener);
+				}
+			}
+			if(filters[i].dataset.resetControl != null)
+			{
+				var controller = document.getElementById(filters[i].dataset.resetControl);
+				if(controller != null)
+				{
+					if(filters[i].type == "select-multiple") // TODO: IE11 compat (I guess...)
+					{
+						for(var k = 0; k < filters[i].options.length; k++)
+							filters[i].options[k].ELC_resetValue = filters[i].options[k].selected;
+					}
+					else if(filters[i].type == "checkbox" || filters[i].type == "radio")
+						filters[i].ELC_resetValue = filters[i].checked;
+					else
+						filters[i].ELC_resetValue = filters[i].value;
+					filters[i].ELC_resetter = controller;
+					if(controller.ELC_filters == null)
+						controller.ELC_filters = [filters[i]];
+					else
+						controller.ELC_filters.push(filters[i]);
+					controller.addEventListener("click", ELC_filter_controller_listener);
+				}
+			}
+			if(filters[i].dataset.clearControl != null)
+			{
+				var controller = document.getElementById(filters[i].dataset.clearControl);
+				if(controller != null)
+				{
+					filters[i].ELC_clearer = controller;
+					if(controller.ELC_filters == null)
+						controller.ELC_filters = [filters[i]];
+					else
+						controller.ELC_filters.push(filters[i]);
+					controller.addEventListener("click", ELC_filter_controller_listener);
 				}
 			}
 			if(filters[i].ELC_list_container.ELC_list_filters.indexOf(filters[i]) == -1)
 			{
 				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
-				if(filters[i].ELC_controller == null)
+				if(filters[i].ELC_applier == null)
 				{
 					filters[i].addEventListener("keyup", ELC_filter_change_listener);
 					filters[i].addEventListener("change", ELC_filter_change_listener);
 				}
-				if(filters[i].value != "") // TODO: Doesn't work with controller.
+				if(filters[i].value != "") // TODO: Might be able to collect these and execute apply_filters once per list rather than iteratively calling ELC_filter_change_listener
 				{
 					try
 					{

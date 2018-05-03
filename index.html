@@ -84,14 +84,16 @@ div.sort-group .sort {
 	</caption>
 	<tr>
 		<th>Text Column</th>
-		<td><input class="filter" data-container="demotable" data-field="text" data-controller="do_filters" type="text" placeholder="Search..."/></td>
+		<td><input class="filter" data-container="demotable" data-field="text" data-apply-control="do_apply" data-reset-control="do_reset" data-clear-control="do_clear" type="text" placeholder="Search..." value="a"/></td>
 	</tr>
 	<tr>
 		<th>Numeric Column</th>
-		<td><input class="filter" data-container="demotable" data-field="number" data-controller="do_filters" type="number" placeholder="Search..."/></td>
+		<td><input class="filter" data-container="demotable" data-field="number" data-apply-control="do_apply" data-reset-control="do_reset" data-clear-control="do_clear" type="number" placeholder="Search..."/></td>
 	</tr>
 </table>
-<button id="do_filters">Apply</button>
+<button id="do_apply">Apply</button>
+<button id="do_clear">Clear</button>
+<button id="do_reset">Reset</button>
 
 <h2>Arbitrary HTML</h2>
 <div class="sort-group" data-container="list_container">
@@ -125,11 +127,13 @@ div.sort-group .sort {
 	<input class="filter" placeholder="Search all..."/>
 	<input class="filter" type="text" data-field="htmlfield" placeholder="Search name..."/>
 	Number contains "e":<input class="filter" data-field="numberfield" type="checkbox" value="e"/>
-	|| Name contains "e": Yes<input class="filter" data-field="htmlfield" name="htmlfield" type="radio" value="e"/>
-	| No<input class="filter" name="htmlfield" type="radio" value=""/>
+	|| Name contains "e": Yes<input class="filter" data-field="htmlfield" name="htmlfield" type="radio" data-reset-control="do_reset2" data-clear-control="do_clear2" value="e"/>
+	| No<input class="filter" name="htmlfield" type="radio" data-reset-control="do_reset2" data-clear-control="do_clear2" value="" checked/>
 	<select class="filter" data-field="textfield"><option value="">Select attribute text...</option><option>Alpha</option><option>Charlie</option><option>Foxtrot</option><option>Tango</option><option>Whiskey</option></select>
-	<select class="filter" data-field="textfield" multiple><option>Alpha</option><option>Charlie</option><option>Foxtrot</option><option>Tango</option><option>Whiskey</option></select>
+	<select class="filter" data-field="textfield" data-reset-control="do_reset2" data-clear-control="do_clear2" multiple><optgroup><option selected>Alpha</option><option>Charlie</option></optgroup><option selected>Foxtrot</option><option>Tango</option><option>Whiskey</option></select>
 	<span class="filter-list"></span>
+	<button id="do_clear2">Clear</button>
+	<button id="do_reset2">Reset</button>
 </div>
 <div class="page-group" data-container="list_container">
 	<span class="pageup">&larr; Previous</span>
