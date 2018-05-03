@@ -131,7 +131,10 @@ function ELC_setData(template_id, data, auto)
 		{
 			if(typeof data == "object")
 			{
-				ELC_listDataModels[template_id] = {parent:template.parentNode,template:template,data:data};
+				for(var i in ELC_listDataModels)
+					if(ELC_listDataModels[i].nextSibling == template)
+						ELC_listDataModels[i].nextSibling = template.nextSibling;
+				ELC_listDataModels[template_id] = {parent:template.parentNode,template:template,data:data,nextSibling:template.nextSibling};
 				template.parentNode.removeChild(template);
 				if(auto)
 					ELC_activateTemplate(template_id);
@@ -167,7 +170,7 @@ function ELC_activateTemplate(template_id)
 				{
 					temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
 					temp.content.firstChild.id = template_id +"_"+ i;
-					ELC_listDataModels[template_id].parent.appendChild(temp.content.firstChild); // TODO: use insertBefore in case the template isn't the only child for some reason
+					ELC_listDataModels[template_id].parent.insertBefore(temp.content.firstChild, ELC_listDataModels[template_id].nextSibling);
 				}
 			}
 			else
@@ -187,7 +190,7 @@ function ELC_activateTemplate(template_id)
 					{
 						temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
 						temp.firstChild.id = template_id +"_"+ i;
-						ELC_listDataModels[template_id].parent.appendChild(temp.firstChild);
+						ELC_listDataModels[template_id].parent.insertBefore(temp.firstChild, ELC_listDataModels[template_id].nextSibling);
 					}
 				}
 			}
