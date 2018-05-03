@@ -273,9 +273,10 @@ function ELC_update(list_container, type)
 			console.log("ELC_update() called on '"+ list_container.id +"' as the result of a mutation.");
 		ELC_logFunctionExecution(true);
 	}
-	var list = (list_container.tagName=="TABLE" ? list_container.tBodies[0] : list_container); // TODO: Support multiple tBodies.
-	if(list.ELC_MutationObserver != null)
-		list.ELC_MutationObserver.disconnect();
+	var list_collection = (list_container.tagName=="TABLE" ? list_container.tBodies : [list_container]); // I don't like creating a random array here but it's cleaner than anything else I thought of.
+	for(var k = 0; k < list_collection.length; k++)
+		if(list_collection[k].ELC_MutationObserver != null)
+			list_collection[k].ELC_MutationObserver.disconnect();
 	ELC_executeHook("before_update", list_container);
 	if(type != "page" && type != "filter")
 		ELC_sort_list(list_container);
@@ -284,8 +285,9 @@ function ELC_update(list_container, type)
 	ELC_display_page(list_container);
 	ELC_addAlternatingClasses(list_container);
 	ELC_executeHook("after_update", list_container);
-	if(list.ELC_MutationObserver != null)
-		list.ELC_MutationObserver.observe(list, {childList:true});
+	for(var k = 0; k < list_collection.length; k++)
+		if(list_collection[k].ELC_MutationObserver != null)
+			list_collection[k].ELC_MutationObserver.observe(list_collection[k], {childList:true});
 	ELC_logFunctionExecution(false);
 }
 
@@ -347,7 +349,7 @@ function ELC_getListContainer(current, containerClass, myClasses)
 // ---- Begin sorting functions ----
 function ELC_sort_event_listener(event)
 {
-	if(event != null && event.detail == "noELC")
+	if(event != null && event.detail != null && event.detail.no_ELC)
 		return;
 	if(this.ELC_list_container == null)
 	{
@@ -376,7 +378,7 @@ function ELC_sort_event_listener(event)
 				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortdown");
 		}
 	}
-	if(event == null || event.detail != "noupdate")
+	if(event == null || event.detail == null || !event.detail.ELC_noUpdate)
 		ELC_update(this.ELC_list_container, "sort");
 }
 
@@ -586,7 +588,7 @@ function ELC_filter_controller_listener(e)
 				this.ELC_filters[i].checked = (this.ELC_filters[i].value == "");
 			else
 				this.ELC_filters[i].value = "";
-			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:"noELC"})); // TODO: Should we check if the element was actually changed by this?
+			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:{no_ELC:1}})); // TODO: Should we check if the element was actually changed by this?
 		}
 		if(this.ELC_filters[i].ELC_resetter == this)
 		{
@@ -599,7 +601,7 @@ function ELC_filter_controller_listener(e)
 				this.ELC_filters[i].checked = this.ELC_filters[i].ELC_resetValue;
 			else
 				this.ELC_filters[i].value = this.ELC_filters[i].ELC_resetValue;
-			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:"noELC"})); // TODO: Should we check if the element was actually changed by this?
+			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:{no_ELC:1}})); // TODO: Should we check if the element was actually changed by this?
 		}
 		if(this.ELC_filters[i].ELC_applier == this || this.ELC_filters[i].ELC_applier == null)
 		{
@@ -616,7 +618,7 @@ function ELC_filter_controller_listener(e)
 
 function ELC_filter_change_listener(e)
 {
-	if(e != null && e.detail == "noELC")
+	if(e != null && e.detail != null && e.detail.no_ELC)
 		return;
 	if(this.ELC_list_container == null)
 	{
@@ -737,7 +739,7 @@ function ELC_filter_change_listener_step2(e)
 		}
 	}
 	ELC_logFunctionExecution(false);
-	if(e == null || e.detail != "noupdate")
+	if(e == null || e.detail == null || !e.detail.ELC_noUpdate)
 		ELC_update(this.ELC_list_container, "filter");
 }
 
@@ -763,7 +765,7 @@ function remove_filter(e)
 // ---- Begin paginating functions ----
 function ELF_perpage_change_listener(e)
 {
-	if(e != null && e.detail == "noELC")
+	if(e != null && e.detail != null && e.detail.no_ELC)
 		return;
 	var val = parseInt(this.value);
 	if(val)
@@ -772,7 +774,7 @@ function ELF_perpage_change_listener(e)
 		this.value = this.ELC_list_container.ELC_perpage;
 	else
 		this.value = this.ELC_list_container.ELC_perpage = 100; // TODO: find a way to let the user set the default?
-	if(e == null || e.detail != "noupdate")
+	if(e == null || e.detail == null || !e.detail.ELC_noUpdate)
 		ELC_update(this.ELC_list_container, "page");
 }
 			
@@ -961,14 +963,12 @@ function ELC_initialize(event)
 		{
 			try
 			{
-				//initial_sorts[i].dispatchEvent(new CustomEvent("click", {detail:"noupdate"}));
-				ELC_sort_event_listener.call(initial_sorts[i], new CustomEvent("click", {detail:"noupdate"}));
+				ELC_sort_event_listener.call(initial_sorts[i], new CustomEvent("click", {detail:{ELC_noUpdate:1}}));
 			}
 			catch(err)
 			{
 				var event = document.createEvent("customevent");
-				event.initCustomEvent("click", false, false, {detail:"noupdate"})
-				//initial_sorts[i].dispatchEvent(event);
+				event.initCustomEvent("click", false, false, {detail:{ELC_noUpdate:1}})
 				ELC_sort_event_listener.call(initial_sorts[i], event);
 			}
 			initial_sorts[i].classList.remove("sort-initial");
@@ -1055,14 +1055,12 @@ function ELC_initialize(event)
 				{
 					try
 					{
-						//filters[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
-						ELC_filter_change_listener.call(filters[i], new CustomEvent("change", {detail:"noupdate"}));
+						ELC_filter_change_listener.call(filters[i], new CustomEvent("change", {detail:{ELC_noUpdate:1}}));
 					}
 					catch(err)
 					{
 						var event = document.createEvent("customevent");
-						event.initCustomEvent("change", false, false, {detail:"noupdate"})
-						//filters[i].dispatchEvent(event);
+						event.initCustomEvent("change", false, false, {detail:{ELC_noUpdate:1}})
 						ELC_filter_change_listener.call(filters[i], event);
 					}
 				}
@@ -1144,14 +1142,12 @@ function ELC_initialize(event)
 			perpages[i].addEventListener("change", ELF_perpage_change_listener);
 			try
 			{
-				//perpages[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
-				ELF_perpage_change_listener.call(perpages[i], new CustomEvent("change", {detail:"noupdate"}));
+				ELF_perpage_change_listener.call(perpages[i], new CustomEvent("change", {detail:{ELC_noUpdate:1}}));
 			}
 			catch(err)
 			{
 				var event = document.createEvent("customevent");
-				event.initCustomEvent("change", false, false, {detail:"noupdate"})
-				//perpages[i].dispatchEvent(event);
+				event.initCustomEvent("change", false, false, {detail:{ELC_noUpdate:1}})
 				ELF_perpage_change_listener.call(perpages[i], event);
 			}
 		}
@@ -1160,17 +1156,12 @@ function ELC_initialize(event)
 	for(var i in all_containers)
 	{
 		ELC_update(all_containers[i], "init");
-		if(all_containers[i].tagName == "TABLE")
-		{ // TODO: Apply observers to all tBodies.
-			if(all_containers[i].tBodies[0].ELC_MutationObserver == null)
-				all_containers[i].tBodies[0].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
-			all_containers[i].tBodies[0].ELC_MutationObserver.observe(all_containers[i], {childList:true});
-		}
-		else
+		var list_collection = (all_containers[i].tagName=="TABLE" ? all_containers[i].tBodies : [all_containers[i]]); // I don't like creating a random array here but it's cleaner than anything else I thought of.
+		for(var k = 0; k < list_collection.length; k++)
 		{
-			if(all_containers[i].ELC_MutationObserver == null)
-				all_containers[i].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
-			all_containers[i].ELC_MutationObserver.observe(all_containers[i], {childList:true});
+			if(list_collection[k].ELC_MutationObserver == null)
+				list_collection[k].ELC_MutationObserver = new MutationObserver(ELC_observerCallback);
+			list_collection[k].ELC_MutationObserver.observe(list_collection[k], {childList:true});
 		}
 	}
 	ELC_logFunctionExecution(false);
