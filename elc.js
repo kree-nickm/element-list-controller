@@ -347,6 +347,8 @@ function ELC_getListContainer(current, containerClass, myClasses)
 // ---- Begin sorting functions ----
 function ELC_sort_event_listener(event)
 {
+	if(event != null && event.detail == "noELC")
+		return;
 	if(this.ELC_list_container == null)
 	{
 		console.error("Cannot find the table this sorter is meant to apply to: "+ $(this));
@@ -374,7 +376,7 @@ function ELC_sort_event_listener(event)
 				this.ELC_list_container.ELC_list_sorters[i].classList.add("sortdown");
 		}
 	}
-	if(event.detail != "noupdate")
+	if(event == null || event.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "sort");
 }
 
@@ -584,6 +586,7 @@ function ELC_filter_controller_listener(e)
 				this.ELC_filters[i].checked = (this.ELC_filters[i].value == "");
 			else
 				this.ELC_filters[i].value = "";
+			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:"noELC"})); // TODO: Should we check if the element was actually changed by this?
 		}
 		if(this.ELC_filters[i].ELC_resetter == this)
 		{
@@ -596,6 +599,7 @@ function ELC_filter_controller_listener(e)
 				this.ELC_filters[i].checked = this.ELC_filters[i].ELC_resetValue;
 			else
 				this.ELC_filters[i].value = this.ELC_filters[i].ELC_resetValue;
+			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:"noELC"})); // TODO: Should we check if the element was actually changed by this?
 		}
 		if(this.ELC_filters[i].ELC_applier == this || this.ELC_filters[i].ELC_applier == null)
 		{
@@ -612,6 +616,8 @@ function ELC_filter_controller_listener(e)
 
 function ELC_filter_change_listener(e)
 {
+	if(e != null && e.detail == "noELC")
+		return;
 	if(this.ELC_list_container == null)
 	{
 		console.error("Cannot find the table this filter is meant to apply to: "+ $(this));
@@ -731,7 +737,7 @@ function ELC_filter_change_listener_step2(e)
 		}
 	}
 	ELC_logFunctionExecution(false);
-	if(e.detail != "noupdate")
+	if(e == null || e.detail != "noupdate")
 		ELC_update(this.ELC_list_container, "filter");
 }
 
@@ -755,6 +761,21 @@ function remove_filter(e)
 // ---- End filtering functions ----
 
 // ---- Begin paginating functions ----
+function ELF_perpage_change_listener(e)
+{
+	if(e != null && e.detail == "noELC")
+		return;
+	var val = parseInt(this.value);
+	if(val)
+		this.ELC_list_container.ELC_perpage = val;
+	else if(this.ELC_list_container.ELC_perpage)
+		this.value = this.ELC_list_container.ELC_perpage;
+	else
+		this.value = this.ELC_list_container.ELC_perpage = 100; // TODO: find a way to let the user set the default?
+	if(e == null || e.detail != "noupdate")
+		ELC_update(this.ELC_list_container, "page");
+}
+			
 function ELC_display_page(list_container)
 {
 	if(list_container.ELC_current_page == null)
@@ -940,13 +961,15 @@ function ELC_initialize(event)
 		{
 			try
 			{
-				initial_sorts[i].dispatchEvent(new CustomEvent("click", {detail:"noupdate"}));
+				//initial_sorts[i].dispatchEvent(new CustomEvent("click", {detail:"noupdate"}));
+				ELC_sort_event_listener.call(initial_sorts[i], new CustomEvent("click", {detail:"noupdate"}));
 			}
 			catch(err)
 			{
 				var event = document.createEvent("customevent");
 				event.initCustomEvent("click", false, false, {detail:"noupdate"})
-				initial_sorts[i].dispatchEvent(event);
+				//initial_sorts[i].dispatchEvent(event);
+				ELC_sort_event_listener.call(initial_sorts[i], event);
 			}
 			initial_sorts[i].classList.remove("sort-initial");
 			// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
@@ -1118,26 +1141,18 @@ function ELC_initialize(event)
 		perpages[i].ELC_list_container = ELC_getListContainer(perpages[i], "paged", ["perpage", "page-group"]);
 		if(perpages[i].ELC_list_container != null)
 		{
-			perpages[i].addEventListener("change", function(e){
-				var val = parseInt(this.value);
-				if(val)
-					this.ELC_list_container.ELC_perpage = val;
-				else if(this.ELC_list_container.ELC_perpage)
-					this.value = this.ELC_list_container.ELC_perpage;
-				else
-					this.value = this.ELC_list_container.ELC_perpage = 100; // find a way to let the user set the default?
-				if(e.detail != "noupdate")
-					ELC_update(this.ELC_list_container, "page");
-			});
+			perpages[i].addEventListener("change", ELF_perpage_change_listener);
 			try
 			{
-				perpages[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+				//perpages[i].dispatchEvent(new CustomEvent("change", {detail:"noupdate"}));
+				ELF_perpage_change_listener.call(perpages[i], new CustomEvent("change", {detail:"noupdate"}));
 			}
 			catch(err)
 			{
 				var event = document.createEvent("customevent");
 				event.initCustomEvent("change", false, false, {detail:"noupdate"})
-				perpages[i].dispatchEvent(event);
+				//perpages[i].dispatchEvent(event);
+				ELF_perpage_change_listener.call(perpages[i], event);
 			}
 		}
 	}
