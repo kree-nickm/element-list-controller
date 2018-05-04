@@ -55,9 +55,9 @@ function ELC_logFunctionExecution(begin, closed, extra)
 		{
 			console.time(ELC_logFunctionExecution.caller.name + (extra!=null ? " ("+extra+")" : "") +" execution time");
 			if(closed)
-				console.groupCollapsed(ELC_logFunctionExecution.caller.name +" logging"+ (extra!=null ? ": "+extra : ""));
+				console.groupCollapsed(ELC_logFunctionExecution.caller.name +"("+ Array.prototype.join.call(ELC_logFunctionExecution.caller.arguments,",") +") logging"+ (extra!=null ? ": "+extra : ""));
 			else
-				console.group(ELC_logFunctionExecution.caller.name +" logging"+ (extra!=null ? ": "+extra : ""));
+				console.group(ELC_logFunctionExecution.caller.name +"("+ Array.prototype.join.call(ELC_logFunctionExecution.caller.arguments,",") +") logging"+ (extra!=null ? ": "+extra : ""));
 		}
 		else
 		{
@@ -337,6 +337,7 @@ function ELC_sort_event_listener(event)
 		console.error("Cannot find the table this sorter is meant to apply to: "+ $(this));
 		return;
 	}
+	ELC_logFunctionExecution(true);
 	this.ELC_list_container.ELC_current_sort_type = this.ELC_sort_type;
 	if(this.ELC_list_container.ELC_current_sort_field == this.ELC_field)
 	{
@@ -361,6 +362,7 @@ function ELC_sort_event_listener(event)
 	}
 	if(event == null || event.detail == null || !event.detail.ELC_noUpdate)
 		ELC_update(this.ELC_list_container, "sort");
+	ELC_logFunctionExecution(false);
 }
 
 function ELC_sort_list(list_container)
@@ -386,6 +388,7 @@ function ELC_sort_list(list_container)
 		ELC_merge_sort(list.children, list_container, list);
 		ELC_logFunctionExecution(false, false, "actual merge sort");
 	}
+	// TODO: Don't animate if this was triggered by a sort-initial
 	if(list_container.dataset.sortTransitionTime != null)
 	{
 		if(ELC_debug_mode) console.time("Animation execution time");
@@ -560,6 +563,7 @@ function ELC_apply_filter(list_container)
 
 function ELC_filter_controller_listener(e)
 {
+	ELC_logFunctionExecution(true);
 	var containers = {};
 	for(var i in this.ELC_filters)
 	{
@@ -594,6 +598,7 @@ function ELC_filter_controller_listener(e)
 	{
 		ELC_filter_change_listener.call(containers[i], e);
 	}
+	ELC_logFunctionExecution(false);
 }
 
 function ELC_filter_change_listener(e)
@@ -710,9 +715,9 @@ function ELC_filter_change_listener_step2(e)
 				ELC_createFilterListElement("not", this.ELC_list_container, i, this.ELC_list_container.ELC_active_filters[i].not[k]);
 		}
 	}
-	ELC_logFunctionExecution(false);
 	if(e == null || e.detail == null || !e.detail.ELC_noUpdate)
 		ELC_update(this.ELC_list_container, "filter");
+	ELC_logFunctionExecution(false);
 }
 
 function ELC_createFilterListElement(filter_type, list_container, field, term)
