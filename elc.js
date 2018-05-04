@@ -608,11 +608,12 @@ function ELC_filter_controller_listener(e)
 		}
 		if(this.ELC_filters[i].ELC_applier == this || this.ELC_filters[i].ELC_applier == null)
 		{
-			if(containers[this.ELC_filters[i].ELC_list_container] == null)
-				containers[this.ELC_filters[i].ELC_list_container] = {ELC_list_container:this.ELC_filters[i].ELC_list_container, ELC_filters:[]};
-			containers[this.ELC_filters[i].ELC_list_container].ELC_filters.push(this.ELC_filters[i]);
+			if(containers[this.ELC_filters[i].ELC_list_container.id] == null)
+				containers[this.ELC_filters[i].ELC_list_container.id] = {ELC_list_container:this.ELC_filters[i].ELC_list_container, ELC_filters:[]};
+			containers[this.ELC_filters[i].ELC_list_container.id].ELC_filters.push(this.ELC_filters[i]);
 		}
 	}
+	console.log(containers);
 	for(var i in containers)
 	{
 		ELC_filter_change_listener.call(containers[i], e);
@@ -654,7 +655,7 @@ function ELC_filter_change_listener_step2(e)
 				{
 					if(this.ELC_list_container.ELC_active_filters[field].or == null)
 						this.ELC_list_container.ELC_active_filters[field].or = {};
-					this.ELC_list_container.ELC_active_filters[field].or[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
+					this.ELC_list_container.ELC_active_filters[field].or[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
 				}
 				break;
 			case "radio":
@@ -662,14 +663,14 @@ function ELC_filter_change_listener_step2(e)
 				{
 					if(this.ELC_list_container.ELC_active_filters[field].and == null)
 						this.ELC_list_container.ELC_active_filters[field].and = {};
-					this.ELC_list_container.ELC_active_filters[field].and[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
+					this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
 				}
 				break;
 			case "number":
 			case "select-one":
 				if(this.ELC_list_container.ELC_active_filters[field].and == null)
 					this.ELC_list_container.ELC_active_filters[field].and = {};
-				this.ELC_list_container.ELC_active_filters[field].and[i] = {value:this.ELC_list_container.ELC_list_filters[i].value};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
 				break;
 			case "select-multiple":
 				if(this.ELC_list_container.ELC_list_filters[i].selectedOptions != null)
@@ -686,7 +687,7 @@ function ELC_filter_change_listener_step2(e)
 					{
 						if(this.ELC_list_container.ELC_active_filters[field].or == null)
 							this.ELC_list_container.ELC_active_filters[field].or = {};
-						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {value:selectedOptions[k].value};
+						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {source:this.ELC_list_container.ELC_list_filters[i],value:selectedOptions[k].value};
 					}
 				break;
 			case "text": // TODO: implement quoted text, maybe redo this filter to allow less strict searches
@@ -700,25 +701,25 @@ function ELC_filter_change_listener_step2(e)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].and == null)
 								this.ELC_list_container.ELC_active_filters[field].and = {};
-							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {value:strings[s].substr(1)};
+							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1)};
 						}
 						else if(strings[s][0] == "|" && strings[s].length > 1)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].or == null)
 								this.ELC_list_container.ELC_active_filters[field].or = {};
-							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {value:strings[s].substr(1)};
+							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1)};
 						}
 						else if(strings[s][0] == "-" && strings[s].length > 1)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].not == null)
 								this.ELC_list_container.ELC_active_filters[field].not = {};
-							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {value:strings[s].substr(1)};
+							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1)};
 						}
 						else if(strings[s].length > 0)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].and == null)
 								this.ELC_list_container.ELC_active_filters[field].and = {};
-							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {value:strings[s]};
+							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s]};
 						}
 					}
 				}
@@ -766,7 +767,7 @@ function remove_filter(e)
 // ---- End filtering functions ----
 
 // ---- Begin paginating functions ----
-function ELF_perpage_change_listener(e)
+function ELC_perpage_change_listener(e)
 {
 	if(e != null && e.detail != null && e.detail.no_ELC)
 		return;
@@ -966,12 +967,12 @@ function ELC_initialize(event)
 		{
 			try
 			{
-				ELC_sort_event_listener.call(initial_sorts[i], new CustomEvent("click", {detail:{ELC_noUpdate:1}}));
+				ELC_sort_event_listener.call(initial_sorts[i], new CustomEvent("DOMContentLoaded", {detail:{ELC_noUpdate:1}}));
 			}
 			catch(err)
 			{
 				var event = document.createEvent("customevent");
-				event.initCustomEvent("click", false, false, {detail:{ELC_noUpdate:1}})
+				event.initCustomEvent("DOMContentLoaded", false, false, {detail:{ELC_noUpdate:1}})
 				ELC_sort_event_listener.call(initial_sorts[i], event);
 			}
 			initial_sorts[i].classList.remove("sort-initial");
@@ -1054,16 +1055,16 @@ function ELC_initialize(event)
 					filters[i].addEventListener("keyup", ELC_filter_change_listener);
 					filters[i].addEventListener("change", ELC_filter_change_listener);
 				}
-				if(filters[i].value != "") // TODO: Might be able to collect these and execute apply_filters once per list rather than iteratively calling ELC_filter_change_listener
+				if(filters[i].value != "") // TODO: Might be able to collect these and execute ELC_filter_change_listener once per list rather than iteratively calling it for each filter
 				{
 					try
 					{
-						ELC_filter_change_listener.call(filters[i], new CustomEvent("change", {detail:{ELC_noUpdate:1}}));
+						ELC_filter_change_listener.call(filters[i], new CustomEvent("DOMContentLoaded", {detail:{ELC_noUpdate:1}}));
 					}
 					catch(err)
 					{
 						var event = document.createEvent("customevent");
-						event.initCustomEvent("change", false, false, {detail:{ELC_noUpdate:1}})
+						event.initCustomEvent("DOMContentLoaded", false, false, {detail:{ELC_noUpdate:1}})
 						ELC_filter_change_listener.call(filters[i], event);
 					}
 				}
@@ -1142,16 +1143,16 @@ function ELC_initialize(event)
 		perpages[i].ELC_list_container = ELC_getListContainer(perpages[i], "paged", ["perpage", "page-group"]);
 		if(perpages[i].ELC_list_container != null)
 		{
-			perpages[i].addEventListener("change", ELF_perpage_change_listener);
+			perpages[i].addEventListener("change", ELC_perpage_change_listener);
 			try
 			{
-				ELF_perpage_change_listener.call(perpages[i], new CustomEvent("change", {detail:{ELC_noUpdate:1}}));
+				ELC_perpage_change_listener.call(perpages[i], new CustomEvent("DOMContentLoaded", {detail:{ELC_noUpdate:1}}));
 			}
 			catch(err)
 			{
 				var event = document.createEvent("customevent");
-				event.initCustomEvent("change", false, false, {detail:{ELC_noUpdate:1}})
-				ELF_perpage_change_listener.call(perpages[i], event);
+				event.initCustomEvent("DOMContentLoaded", false, false, {detail:{ELC_noUpdate:1}})
+				ELC_perpage_change_listener.call(perpages[i], event);
 			}
 		}
 	}
