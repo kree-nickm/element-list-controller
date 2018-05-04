@@ -1,8 +1,7 @@
 var ELC_debug_mode = false;
 var ELC_initialized = false;
-// TODO: Use asyncronous javascript where possible.
 
-Element.prototype.getFirstElementWithData = function(data, value)
+HTMLElement.prototype.getFirstElementWithData = function(data, value)
 {
 	for(var i = 0; i < this.children.length; i++)
 		if(this.children[i].dataset[data] != null && this.children[i].dataset[data] == value)
@@ -37,36 +36,15 @@ HTMLTableSectionElement.prototype.updatePracticalCellIndices = function()
 	}
 }
 
-if(!HTMLSelectElement.prototype.hasOwnProperty("selectedOptions"))
+HTMLSelectElement.prototype.getSelectedOptions = function()
 {
-	HTMLElement.prototype.getSelectedOptions = function()
-	{
-		var result = [];
-		for(var k = 0; k < this.children.length; k++)
-		{
-			if(this.children[k].tagName == "OPTION" && this.children[k].selected && this.children[k].value.length > 0)
-				result.push(this.children[k]);
-			else if(this.children[k].children.length > 0)
-			{
-				result = result.concat(this.children[k].getSelectedOptions());
-			}
-		}
-		return result;
-	}
-	HTMLElement.prototype.getOptions = function()
-	{
-		var result = [];
-		for(var k = 0; k < this.children.length; k++)
-		{
-			if(this.children[k].tagName == "OPTION")
-				result.push(this.children[k]);
-			else if(this.children[k].children.length > 0)
-			{
-				result = result.concat(this.children[k].getOptions());
-			}
-		}
-		return result;
-	}
+	if(this.selectedOptions != null)
+		return this.selectedOptions;
+	var result = [];
+	for(var i = 0; i < this.options.length; i++)
+		if(this.options[i].tagName == "OPTION" && this.options[i].selected && this.options[i].value.length > 0)
+			result.push(this.options[i]);
+	return result;
 }
 
 function ELC_logFunctionExecution(begin, closed, extra)
@@ -300,7 +278,7 @@ function ELC_addAlternatingClasses(list_container)
 	var alt = false;
 	for(var i = 0; i < all_elements.length; i++)
 	{
-		if(all_elements[i].parentNode.tagName == "THEAD")
+		if(all_elements[i].parentNode.tagName == "THEAD" || all_elements[i].parentNode.tagName == "TFOOT")
 			continue;
 		all_elements[i].classList.remove("elceven");
 		all_elements[i].classList.remove("elcodd");
@@ -415,7 +393,7 @@ function ELC_sort_list(list_container)
 		for(var i = 0; i < all_elements.length; i++)
 		{
 			var element = all_elements[i];
-			if(element.parentNode.tagName == "THEAD")
+			if(element.parentNode.tagName == "THEAD" || element.parentNode.tagName == "TFOOT")
 				continue;
 			if(window.getComputedStyle(element, null).getPropertyValue("position") == "static")
 				element.style.position = "relative";
@@ -505,7 +483,7 @@ function ELC_apply_filter(list_container)
 	var list_elements = (list_container.tagName=="TABLE" ? list_container.rows : list_container.children);
 	for(var i = 0; i < list_elements.length; i++)
 	{
-		if(list_elements[i].parentNode.tagName == "THEAD")
+		if(list_elements[i].parentNode.tagName == "THEAD" || list_elements[i].parentNode.tagName == "TFOOT")
 			continue;
 		ELC_logFunctionExecution(true, true, "element#"+i);
 		list_elements[i].classList.remove("filtered-out");
@@ -595,11 +573,9 @@ function ELC_filter_controller_listener(e)
 		}
 		if(this.ELC_filters[i].ELC_resetter == this)
 		{
-			if(this.ELC_filters[i].type == "select-multiple") // TODO: IE11 compat (I guess...)
-			{
+			if(this.ELC_filters[i].type == "select-multiple")
 				for(var k = 0; k < this.ELC_filters[i].options.length; k++)
 					this.ELC_filters[i].options[k].selected = this.ELC_filters[i].options[k].ELC_resetValue;
-			}
 			else if(this.ELC_filters[i].type == "checkbox" || this.ELC_filters[i].type == "radio")
 				this.ELC_filters[i].checked = this.ELC_filters[i].ELC_resetValue;
 			else
@@ -673,15 +649,7 @@ function ELC_filter_change_listener_step2(e)
 				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
 				break;
 			case "select-multiple":
-				if(this.ELC_list_container.ELC_list_filters[i].selectedOptions != null)
-					var selectedOptions = this.ELC_list_container.ELC_list_filters[i].selectedOptions;
-				else if(this.ELC_list_container.ELC_list_filters[i].getSelectedOptions != null)
-					var selectedOptions = this.ELC_list_container.ELC_list_filters[i].getSelectedOptions();
-				else
-				{
-					var selectedOptions = [];
-					console.error("This browser is utter trash and doesn't support any of the methods to determine what options are selected.");
-				}
+				var selectedOptions = this.ELC_list_container.ELC_list_filters[i].getSelectedOptions();
 				for(var k = 0; k < selectedOptions.length; k++)
 					if(selectedOptions[k].value != null && selectedOptions[k].value.length > 0)
 					{
@@ -777,7 +745,7 @@ function ELC_perpage_change_listener(e)
 	else if(this.ELC_list_container.ELC_perpage)
 		this.value = this.ELC_list_container.ELC_perpage;
 	else
-		this.value = this.ELC_list_container.ELC_perpage = 100; // TODO: find a way to let the user set the default?
+		this.value = this.ELC_list_container.ELC_perpage = 60; // TODO: find a way to let the user set the default?
 	if(e == null || e.detail == null || !e.detail.ELC_noUpdate)
 		ELC_update(this.ELC_list_container, "page");
 }
@@ -796,14 +764,13 @@ function ELC_display_page(list_container)
 			rows.push(list.children[i]);
 	}
 	
-	var num_pages = Math.ceil(rows.length/list_container.ELC_perpage);
 	if(!list_container.ELC_perpage)
 	{
-		console.error("Error when paginating list: could not calculate page count because perpage value was not properly set ("+list_container.ELC_perpage+").");
-		ELC_logFunctionExecution(false);
-		return;
+		console.warn("Could not calculate page count because perpage value was not properly set; defaulting to 60.");
+		list_container.ELC_perpage = 60; // TODO: find a way to let the user set the default?
 	}
-	else if(!rows.length)
+	var num_pages = Math.ceil(rows.length/list_container.ELC_perpage);
+	if(!rows.length)
 	{
 		console.warn("Cannot paginate a list that has no elements.");
 		list_container.ELC_current_page = -1;
@@ -843,6 +810,15 @@ function ELC_display_page(list_container)
 function ELC_initialize(event)
 {
 	ELC_logFunctionExecution(true);
+	try
+	{
+		var customEvent = new CustomEvent((event!=null ? event.type : "init"), {detail:{ELC_noUpdate:1}});
+	}
+	catch(err)
+	{
+		var customEvent = document.createEvent("customevent");
+		customEvent.initCustomEvent((event!=null ? event.type : "init"), false, false, {detail:{ELC_noUpdate:1}})
+	}
 	
 	ELC_initialized = true; // TODO: move this back to the bottom once ELC_setData doesn't rely on it.
 	for(var i in ELC_listDataModels["-pre-init-"])
@@ -903,6 +879,8 @@ function ELC_initialize(event)
 			pages[i].ELC_currentpage_indicators = [];
 		if(pages[i].ELC_maxpage_indicators == null)
 			pages[i].ELC_maxpage_indicators = [];
+		if(pages[i].dataset.perpage)
+			pages[i].ELC_perpage = parseInt(pages[i].dataset.perpage);
 		if(all_containers.indexOf(pages[i]) == -1)
 			all_containers.push(pages[i]);
 	}
@@ -941,7 +919,7 @@ function ELC_initialize(event)
 		sorts[i].ELC_list_container = ELC_getListContainer(sorts[i], "sortable", ["sort", "sort-group"]);
 		if(sorts[i].ELC_list_container != null)
 		{
-			if(sorts[i].practicalCellIndex != null) // TODO: Verify the rest of the JavaScript file. This used to check if the container was a table, which would make it impossible for non-header-cells within the table (like in a caption or something) to be sorters. Make sure nowhere else in the script does this.
+			if(sorts[i].practicalCellIndex != null)
 				sorts[i].ELC_field = sorts[i].practicalCellIndex;
 			else if(sorts[i].dataset.field != null)
 				sorts[i].ELC_field = sorts[i].dataset.field;
@@ -965,16 +943,7 @@ function ELC_initialize(event)
 	{
 		if(initial_sorts[i].ELC_list_container != null)
 		{
-			try
-			{
-				ELC_sort_event_listener.call(initial_sorts[i], new CustomEvent("DOMContentLoaded", {detail:{ELC_noUpdate:1}}));
-			}
-			catch(err)
-			{
-				var event = document.createEvent("customevent");
-				event.initCustomEvent("DOMContentLoaded", false, false, {detail:{ELC_noUpdate:1}})
-				ELC_sort_event_listener.call(initial_sorts[i], event);
-			}
+			ELC_sort_event_listener.call(initial_sorts[i], customEvent);
 			initial_sorts[i].classList.remove("sort-initial");
 			// Above line prevents the sort order from being reinitialized to this field if the sortables are reinitialized. Whether we want that, or to let the list stay sorted as it was, who knows?
 		}
@@ -1017,11 +986,9 @@ function ELC_initialize(event)
 				var controller = document.getElementById(filters[i].dataset.resetControl);
 				if(controller != null)
 				{
-					if(filters[i].type == "select-multiple") // TODO: IE11 compat (I guess...)
-					{
+					if(filters[i].type == "select-multiple")
 						for(var k = 0; k < filters[i].options.length; k++)
 							filters[i].options[k].ELC_resetValue = filters[i].options[k].selected;
-					}
 					else if(filters[i].type == "checkbox" || filters[i].type == "radio")
 						filters[i].ELC_resetValue = filters[i].checked;
 					else
@@ -1057,16 +1024,7 @@ function ELC_initialize(event)
 				}
 				if(filters[i].value != "") // TODO: Might be able to collect these and execute ELC_filter_change_listener once per list rather than iteratively calling it for each filter
 				{
-					try
-					{
-						ELC_filter_change_listener.call(filters[i], new CustomEvent("DOMContentLoaded", {detail:{ELC_noUpdate:1}}));
-					}
-					catch(err)
-					{
-						var event = document.createEvent("customevent");
-						event.initCustomEvent("DOMContentLoaded", false, false, {detail:{ELC_noUpdate:1}})
-						ELC_filter_change_listener.call(filters[i], event);
-					}
+					ELC_filter_change_listener.call(filters[i], customEvent);
 				}
 			}
 		}
@@ -1136,7 +1094,6 @@ function ELC_initialize(event)
 		}
 	}
 	
-	// TODO: Fix: This currently requires a perpage input element in order for pagination to function. Shouldn't be required.
 	var perpages = document.getElementsByClassName("perpage");
 	for(var i = 0; i < perpages.length; i++)
 	{
@@ -1144,16 +1101,7 @@ function ELC_initialize(event)
 		if(perpages[i].ELC_list_container != null)
 		{
 			perpages[i].addEventListener("change", ELC_perpage_change_listener);
-			try
-			{
-				ELC_perpage_change_listener.call(perpages[i], new CustomEvent("DOMContentLoaded", {detail:{ELC_noUpdate:1}}));
-			}
-			catch(err)
-			{
-				var event = document.createEvent("customevent");
-				event.initCustomEvent("DOMContentLoaded", false, false, {detail:{ELC_noUpdate:1}})
-				ELC_perpage_change_listener.call(perpages[i], event);
-			}
+			ELC_perpage_change_listener.call(perpages[i], customEvent);
 		}
 	}
 	
