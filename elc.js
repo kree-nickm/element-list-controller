@@ -78,10 +78,11 @@ function ELC_getFieldValue(record, field, type)
 		if(data != null && data[field] != null)
 		{
 			if(ELC_debug_mode) console.log("Using '"+ record.parentNode.ELC_activeTemplate +"' template value.");
-			return data[field];
+			string = data[field];
 		}
 	}
-	if(record.dataset[field+"Value"] != null)
+	if(string != "") {/*we good*/}
+	else if(record.dataset[field+"Value"] != null)
 		string = record.dataset[field+"Value"];
 	else
 	{
@@ -95,6 +96,8 @@ function ELC_getFieldValue(record, field, type)
 	}
 	if(type == "number")
 		return parseFloat(string);
+	else if(type == "date")
+		return Date.parse(string);
 	else
 		return string;
 }
@@ -492,19 +495,50 @@ function ELC_apply_filter(list_container)
 		list_elements[i].classList.remove("filtered-out");
 		for(var filter_field in list_container.ELC_active_filters)
 		{
+			// TODO: Oh boy, this whole values object thing is real bad. Need to find a much more efficient way to get these values by type.
 			if(filter_field)
-				var text = ELC_getFieldValue(list_elements[i], (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[filter_field]!=null ? list_container.ELC_filter_columns[filter_field] : filter_field), ""); // TODO: implement types
+			{
+				var field = (list_container.ELC_filter_columns!=null&&list_container.ELC_filter_columns[filter_field]!=null ? list_container.ELC_filter_columns[filter_field] : filter_field);
+				var values = {
+					'text': ELC_getFieldValue(list_elements[i], field, "text").toString().toLowerCase(),
+					'number': ELC_getFieldValue(list_elements[i], field, "number"),
+					'html': ELC_getFieldValue(list_elements[i], field, "html").toString().toLowerCase(),
+					'date': ELC_getFieldValue(list_elements[i], field, "date"),
+				};
+			}
 			else
-				var text = list_elements[i].innerText; // TODO: This ignores data-value and will only check the visible text. Is that ok?
-			text = text.toString().toLowerCase();
+			{
+				var values = { // TODO: This ignores data-value and will only check the visible text. Is that ok?
+					'text': list_elements[i].innerText.toString().toLowerCase(),
+					'number': list_elements[i].innerText.toString().toLowerCase(),
+					'html': list_elements[i].innerHTML.toString().toLowerCase(),
+					'date': list_elements[i].innerText.toString().toLowerCase(),
+				};
+			}
 			// TODO: MAYBE... For header cells with colspan, concatenate the data in those columns when filtering. So if that header is the filter field, search all of its columns.
 			
+			var thisfilter = list_container.ELC_active_filters[filter_field];
 			var and_clause = true;
-			if(list_container.ELC_active_filters[filter_field].and != null && Object.keys(list_container.ELC_active_filters[filter_field].and).length > 0)
+			if(thisfilter.and != null && Object.keys(thisfilter.and).length > 0)
 			{
-				for(var t in list_container.ELC_active_filters[filter_field].and)
+				for(var t in thisfilter.and)
 				{
-					if(text.indexOf(list_container.ELC_active_filters[filter_field].and[t].value.toLowerCase()) == -1)
+					if(thisfilter.and[t].type == "date" && thisfilter.and[t].value != values.date)
+					{
+						and_clause = false;
+						break;
+					}
+					else if(thisfilter.and[t].type == "number" && thisfilter.and[t].value != values.number)
+					{
+						and_clause = false;
+						break;
+					}
+					else if(thisfilter.and[t].type == "html" && values.html.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
+					{
+						and_clause = false;
+						break;
+					}
+					else if(values.text.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
 					{
 						and_clause = false;
 						break;
@@ -518,12 +552,27 @@ function ELC_apply_filter(list_container)
 			}
 			
 			var or_clause = true;
-			if(list_container.ELC_active_filters[filter_field].or != null && Object.keys(list_container.ELC_active_filters[filter_field].or).length > 0)
+			if(thisfilter.or != null && Object.keys(thisfilter.or).length > 0)
 			{
 				or_clause = false;
-				for(var t in list_container.ELC_active_filters[filter_field].or)
+				for(var t in thisfilter.or)
 				{
-					if(text.indexOf(list_container.ELC_active_filters[filter_field].or[t].value.toLowerCase()) != -1)
+					if(thisfilter.or[t].type == "date" && thisfilter.or[t].value == values.date)
+					{
+						or_clause = true;
+						break;
+					}
+					else if(thisfilter.or[t].type == "number" && thisfilter.or[t].value == values.number)
+					{
+						or_clause = true;
+						break;
+					}
+					else if(thisfilter.or[t].type == "html" && values.html.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
+					{
+						or_clause = true;
+						break;
+					}
+					else if(values.text.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
 					{
 						or_clause = true;
 						break;
@@ -537,11 +586,26 @@ function ELC_apply_filter(list_container)
 			}
 			
 			var not_clause = true;
-			if(list_container.ELC_active_filters[filter_field].not != null && Object.keys(list_container.ELC_active_filters[filter_field].not).length > 0)
+			if(thisfilter.not != null && Object.keys(thisfilter.not).length > 0)
 			{
-				for(var t in list_container.ELC_active_filters[filter_field].not)
+				for(var t in thisfilter.not)
 				{
-					if(text.indexOf(list_container.ELC_active_filters[filter_field].not[t].value.toLowerCase()) != -1)
+					if(thisfilter.not[t].type == "date" && thisfilter.not[t].value == values.date)
+					{
+						not_clause = false;
+						break;
+					}
+					else if(thisfilter.not[t].type == "number" && thisfilter.not[t].value == values.number)
+					{
+						not_clause = false;
+						break;
+					}
+					else if(thisfilter.not[t].type == "html" && values.html.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
+					{
+						not_clause = false;
+						break;
+					}
+					else if(values.text.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
 					{
 						not_clause = false;
 						break;
@@ -636,7 +700,7 @@ function ELC_filter_change_listener_step2(e)
 				{
 					if(this.ELC_list_container.ELC_active_filters[field].or == null)
 						this.ELC_list_container.ELC_active_filters[field].or = {};
-					this.ELC_list_container.ELC_active_filters[field].or[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
+					this.ELC_list_container.ELC_active_filters[field].or[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"text"}; // TODO: user-defined type
 				}
 				break;
 			case "radio":
@@ -644,14 +708,24 @@ function ELC_filter_change_listener_step2(e)
 				{
 					if(this.ELC_list_container.ELC_active_filters[field].and == null)
 						this.ELC_list_container.ELC_active_filters[field].and = {};
-					this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
+					this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"text"}; // TODO: user-defined type
 				}
 				break;
 			case "number":
+				if(this.ELC_list_container.ELC_active_filters[field].and == null)
+					this.ELC_list_container.ELC_active_filters[field].and = {};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"number"};
+				break;
 			case "select-one":
 				if(this.ELC_list_container.ELC_active_filters[field].and == null)
 					this.ELC_list_container.ELC_active_filters[field].and = {};
-				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"text"}; // TODO: user-defined type
+				break;
+			case "date":
+			case "datetime-local":
+				if(this.ELC_list_container.ELC_active_filters[field].and == null)
+					this.ELC_list_container.ELC_active_filters[field].and = {};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:Date.parse(this.ELC_list_container.ELC_list_filters[i].value),type:"date"};
 				break;
 			case "select-multiple":
 				var selectedOptions = this.ELC_list_container.ELC_list_filters[i].getSelectedOptions();
@@ -660,7 +734,7 @@ function ELC_filter_change_listener_step2(e)
 					{
 						if(this.ELC_list_container.ELC_active_filters[field].or == null)
 							this.ELC_list_container.ELC_active_filters[field].or = {};
-						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {source:this.ELC_list_container.ELC_list_filters[i],value:selectedOptions[k].value};
+						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {source:this.ELC_list_container.ELC_list_filters[i],value:selectedOptions[k].value,type:"text"}; // TODO: user-defined type
 					}
 				break;
 			case "text": // TODO: implement quoted text, maybe redo this filter to allow less strict searches
@@ -674,25 +748,25 @@ function ELC_filter_change_listener_step2(e)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].and == null)
 								this.ELC_list_container.ELC_active_filters[field].and = {};
-							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1)};
+							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1),type:"text"};
 						}
 						else if(strings[s][0] == "|" && strings[s].length > 1)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].or == null)
 								this.ELC_list_container.ELC_active_filters[field].or = {};
-							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1)};
+							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1),type:"text"};
 						}
 						else if(strings[s][0] == "-" && strings[s].length > 1)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].not == null)
 								this.ELC_list_container.ELC_active_filters[field].not = {};
-							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1)};
+							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1),type:"text"};
 						}
 						else if(strings[s].length > 0)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].and == null)
 								this.ELC_list_container.ELC_active_filters[field].and = {};
-							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s]};
+							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s],type:"text"};
 						}
 					}
 				}
@@ -727,8 +801,11 @@ function ELC_createFilterListElement(filter_type, list_container, field, term)
 	span.ELC_list_container = list_container;
 	span.ELC_type = filter_type;
 	span.ELC_field = field;
-	span.ELC_value = term.value;
-	span.appendChild(document.createTextNode((field ? field+":" : "") + term.value));
+	if(term.type == "date")
+		span.ELC_value = (new Date(term.value)).toLocaleString();
+	else
+		span.ELC_value = term.value;
+	span.appendChild(document.createTextNode((field ? field+":" : "") + span.ELC_value));
 	span.addEventListener("click", remove_filter);
 	list_container.ELC_filter_list.appendChild(span);
 }
@@ -930,7 +1007,7 @@ function ELC_initialize(event)
 				sorts[i].ELC_field = sorts[i].dataset.field;
 			else
 				sorts[i].ELC_field = sorts[i].innerText;
-			if(sorts[i].dataset.type == "number" || sorts[i].dataset.type == "html" || sorts[i].dataset.type == "text")
+			if(sorts[i].dataset.type == "number" || sorts[i].dataset.type == "html" || sorts[i].dataset.type == "text" || sorts[i].dataset.type == "date")
 				sorts[i].ELC_sort_type = sorts[i].dataset.type;
 			else
 				sorts[i].ELC_sort_type = "text";
