@@ -220,6 +220,8 @@ var ELC_hooks = { // TODO: make this an object property, maybe?
 	after_template_activate:[],
 	before_template_deactivate:[],
 	after_template_deactivate:[],
+	// this = the controller that was used ('this' of ELC_filter_controller_listener)
+	after_filters_changed_by_controller:[],
 };
 function ELC_addHook(type, callback, params)
 {
@@ -680,6 +682,7 @@ function ELC_filter_controller_listener(e)
 		}
 	}
 	console.log(containers);
+	ELC_executeHook("after_filters_changed_by_controller", this);
 	for(var i in containers)
 	{
 		ELC_filter_change_listener.call(containers[i], e);
