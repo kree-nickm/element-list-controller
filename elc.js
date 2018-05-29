@@ -653,7 +653,7 @@ function ELC_filter_controller_listener(e)
 	var containers = {};
 	for(var i in this.ELC_filters)
 	{
-		if(this.ELC_filters[i].ELC_clearer == this)
+		if(this.ELC_filters[i].ELC_clearers != null && this.ELC_filters[i].ELC_clearers.indexOf(this) != -1)
 		{
 			if(this.ELC_filters[i].type == "checkbox" || this.ELC_filters[i].type == "radio")
 				this.ELC_filters[i].checked = (this.ELC_filters[i].value == "");
@@ -661,7 +661,7 @@ function ELC_filter_controller_listener(e)
 				this.ELC_filters[i].value = "";
 			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:{no_ELC:1}})); // TODO: Should we check if the element was actually changed by this?
 		}
-		if(this.ELC_filters[i].ELC_resetter == this)
+		if(this.ELC_filters[i].ELC_resetters != null && this.ELC_filters[i].ELC_resetters.indexOf(this) != -1)
 		{
 			if(this.ELC_filters[i].type == "select-multiple")
 				for(var k = 0; k < this.ELC_filters[i].options.length; k++)
@@ -672,7 +672,7 @@ function ELC_filter_controller_listener(e)
 				this.ELC_filters[i].value = this.ELC_filters[i].ELC_resetValue;
 			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:{no_ELC:1}})); // TODO: Should we check if the element was actually changed by this?
 		}
-		if(this.ELC_filters[i].ELC_applier == this || this.ELC_filters[i].ELC_applier == null)
+		if(this.ELC_filters[i].ELC_appliers == null || this.ELC_filters[i].ELC_appliers.indexOf(this) != -1)
 		{
 			if(containers[this.ELC_filters[i].ELC_list_container.id] == null)
 				containers[this.ELC_filters[i].ELC_list_container.id] = {ELC_list_container:this.ELC_filters[i].ELC_list_container, ELC_filters:[]};
@@ -1074,21 +1074,34 @@ function ELC_initialize(event)
 				filters[i].ELC_field = "";
 			if(filters[i].dataset.applyControl != null)
 			{
-				var controller = document.getElementById(filters[i].dataset.applyControl);
-				if(controller != null)
+				if(filters[i].dataset.applyControl[0] == ".")
+					var controller = document.getElementsByClassName(filters[i].dataset.applyControl.substr(1));
+				else
+					var controller = document.getElementById(filters[i].dataset.applyControl.substr(filters[i].dataset.applyControl[0]=="#"?1:0));
+				if(controller != null && (controller.length == null || controller.length > 0))
 				{
-					filters[i].ELC_applier = controller;
-					if(controller.ELC_filters == null)
-						controller.ELC_filters = [filters[i]];
-					else
-						controller.ELC_filters.push(filters[i]);
-					controller.addEventListener("click", ELC_filter_controller_listener);
+					var controllers = (controller.length == null ? [controller] : controller);
+					for(var k = 0; k < controllers.length; k++)
+					{
+						if(filters[i].ELC_appliers == null)
+							filters[i].ELC_appliers = [controllers[k]];
+						else
+							filters[i].ELC_appliers.push(controllers[k]);
+						if(controllers[k].ELC_filters == null)
+							controllers[k].ELC_filters = [filters[i]];
+						else
+							controllers[k].ELC_filters.push(filters[i]);
+						controllers[k].addEventListener("click", ELC_filter_controller_listener);
+					}
 				}
 			}
 			if(filters[i].dataset.resetControl != null)
 			{
-				var controller = document.getElementById(filters[i].dataset.resetControl);
-				if(controller != null)
+				if(filters[i].dataset.resetControl[0] == ".")
+					var controller = document.getElementsByClassName(filters[i].dataset.resetControl.substr(1));
+				else
+					var controller = document.getElementById(filters[i].dataset.resetControl.substr(filters[i].dataset.resetControl[0]=="#"?1:0));
+				if(controller != null && (controller.length == null || controller.length > 0))
 				{
 					if(filters[i].type == "select-multiple")
 						for(var k = 0; k < filters[i].options.length; k++)
@@ -1097,31 +1110,48 @@ function ELC_initialize(event)
 						filters[i].ELC_resetValue = filters[i].checked;
 					else
 						filters[i].ELC_resetValue = filters[i].value;
-					filters[i].ELC_resetter = controller;
-					if(controller.ELC_filters == null)
-						controller.ELC_filters = [filters[i]];
-					else
-						controller.ELC_filters.push(filters[i]);
-					controller.addEventListener("click", ELC_filter_controller_listener);
+					var controllers = (controller.length == null ? [controller] : controller);
+					for(var k = 0; k < controllers.length; k++)
+					{
+						if(filters[i].ELC_resetters == null)
+							filters[i].ELC_resetters = [controllers[k]];
+						else
+							filters[i].ELC_resetters.push(controllers[k]);
+						if(controllers[k].ELC_filters == null)
+							controllers[k].ELC_filters = [filters[i]];
+						else
+							controllers[k].ELC_filters.push(filters[i]);
+						controllers[k].addEventListener("click", ELC_filter_controller_listener);
+					}
 				}
 			}
 			if(filters[i].dataset.clearControl != null)
 			{
-				var controller = document.getElementById(filters[i].dataset.clearControl);
-				if(controller != null)
+				if(filters[i].dataset.clearControl[0] == ".")
+					var controller = document.getElementsByClassName(filters[i].dataset.clearControl.substr(1));
+				else
+					var controller = document.getElementById(filters[i].dataset.clearControl.substr(filters[i].dataset.clearControl[0]=="#"?1:0));
+				if(controller != null && (controller.length == null || controller.length > 0))
 				{
-					filters[i].ELC_clearer = controller;
-					if(controller.ELC_filters == null)
-						controller.ELC_filters = [filters[i]];
-					else
-						controller.ELC_filters.push(filters[i]);
-					controller.addEventListener("click", ELC_filter_controller_listener);
+					var controllers = (controller.length == null ? [controller] : controller);
+					for(var k = 0; k < controllers.length; k++)
+					{
+						if(filters[i].ELC_clearers == null)
+							filters[i].ELC_clearers = [controllers[k]];
+						else
+							filters[i].ELC_clearers.push(controllers[k]);
+						if(controllers[k].ELC_filters == null)
+							controllers[k].ELC_filters = [filters[i]];
+						else
+							controllers[k].ELC_filters.push(filters[i]);
+						controllers[k].addEventListener("click", ELC_filter_controller_listener);
+					}
 				}
 			}
 			if(filters[i].ELC_list_container.ELC_list_filters.indexOf(filters[i]) == -1)
 			{
 				filters[i].ELC_list_container.ELC_list_filters.push(filters[i]);
-				if(filters[i].ELC_applier == null)
+				if(filters[i].ELC_appliers == null)
 				{
 					filters[i].addEventListener("keyup", ELC_filter_change_listener);
 					filters[i].addEventListener("change", ELC_filter_change_listener);
