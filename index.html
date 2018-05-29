@@ -221,6 +221,24 @@ div.sort-group .sort {
 <button onclick="ELC_activateTemplate('js_div_template_b')">Activate B</button>
 <button onclick="ELC_deactivateTemplate('js_div_template_b')">Deactivate B</button>
 
+<h2>AJAX Loading Example</h2>
+<div class="sort-group" data-container="ajax_div">
+	<span class="sort" data-field="stream" data-type="text">Stream</span>
+	<span class="sort" data-field="followers" data-type="number">Followers</span>
+	<span class="sort" data-field="views" data-type="number">Views</span>
+	<span class="sort" data-field="date" data-type="date">Date</span>
+</div>
+<div id="ajax_div" class="sortable">
+	<div id="ajax_div_template_a">
+		<ul>
+			<li data-field="stream">{{name}}</li>
+			<li data-field="followers">{{followers}}</li>
+			<li data-field="views">{{views}}</li>
+			<li data-field="date">{{date}}</li>
+		</ul>
+	</div>
+</div>
+
 <script type="text/javascript">
 ELC_addHook("before_update", function(){/* do stuff */});
 var template_data = [
@@ -283,6 +301,7 @@ ELC_setData("js_table1_template", template_data, true);
 ELC_setData("js_table2_template", template_data, true);
 ELC_setData("js_div_template_a", template_data, true);
 ELC_setData("js_div_template_b", template_data, false);
+ELC_setData("ajax_div_template_a", {}, true, "ajax_example.php");
 </script>
 </body>
 </html>

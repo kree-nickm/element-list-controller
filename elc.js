@@ -103,7 +103,7 @@ function ELC_getFieldValue(record, field, type)
 }
 
 var ELC_listDataModels = {"-pre-init-":[]};
-function ELC_setData(template_id, data, auto)
+function ELC_setData(template_id, data, auto, ajax)
 {
 	if(ELC_initialized) // TODO: We don't need ELC to be initialized, just the DOM so that document.getElementById(template_id) can access it.
 	{
@@ -115,7 +115,7 @@ function ELC_setData(template_id, data, auto)
 				for(var i in ELC_listDataModels)
 					if(ELC_listDataModels[i].nextSibling == template)
 						ELC_listDataModels[i].nextSibling = template.nextSibling;
-				ELC_listDataModels[template_id] = {parent:template.parentNode,template:template,data:data,nextSibling:template.nextSibling};
+				ELC_listDataModels[template_id] = {parent:template.parentNode,template:template,data:data,nextSibling:template.nextSibling,ajax:ajax};
 				template.parentNode.removeChild(template);
 				if(auto)
 					ELC_activateTemplate(template_id);
@@ -131,7 +131,7 @@ function ELC_setData(template_id, data, auto)
 	}
 	else
 	{
-		ELC_listDataModels["-pre-init-"].push({template_id:template_id,data:data,auto:auto});
+		ELC_listDataModels["-pre-init-"].push({template_id:template_id,data:data,auto:auto,ajax:ajax});
 	}
 }
 
@@ -251,6 +251,10 @@ function ELC_executeHook(type, context)
 
 function ELC_update(list_container, type)
 {
+	if(ajax)
+	{
+		return ELC_update_request(list_container);
+	}
 	if(ELC_debug_mode)
 	{
 		if(type=="mutation")
@@ -273,6 +277,24 @@ function ELC_update(list_container, type)
 		if(list_collection[k].ELC_MutationObserver != null)
 			list_collection[k].ELC_MutationObserver.observe(list_collection[k], {childList:true});
 	ELC_logFunctionExecution(false);
+}
+
+function ELC_update_request(list_container, URL)
+{
+	var httpRequest = new XMLHttpRequest();
+	httpRequest.onreadystatechange = ELC_update_response;
+	httpRequest.open("POST", URL, true);
+	httpRequest.setRequestHeader("Content-Type", "application/json");
+	httpRequest.send({
+		x: list_container.ELC_current_sort_field,
+		x: list_container.ELC_current_sort_reversed,
+		x: list_container.ELC_current_sort_type,
+	});
+}
+
+function ELC_update_response(a,b,c)
+{
+	console.log(this, a, b, c);
 }
 
 function ELC_addAlternatingClasses(list_container)
@@ -904,7 +926,7 @@ function ELC_initialize(event)
 	
 	ELC_initialized = true; // TODO: move this back to the bottom once ELC_setData doesn't rely on it.
 	for(var i in ELC_listDataModels["-pre-init-"])
-		ELC_setData(ELC_listDataModels["-pre-init-"][i].template_id, ELC_listDataModels["-pre-init-"][i].data, ELC_listDataModels["-pre-init-"][i].auto);
+		ELC_setData(ELC_listDataModels["-pre-init-"][i].template_id, ELC_listDataModels["-pre-init-"][i].data, ELC_listDataModels["-pre-init-"][i].auto, ELC_listDataModels["-pre-init-"][i].ajax);
 	
 	// ---- Begin setting up list containers ----
 	var all_containers = [];
