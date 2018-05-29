@@ -251,7 +251,7 @@ function ELC_executeHook(type, context)
 
 function ELC_update(list_container, type)
 {
-	if(ajax)
+	if(ajax != null)
 	{
 		return ELC_update_request(list_container);
 	}
