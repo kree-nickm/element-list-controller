@@ -220,8 +220,8 @@ var ELC_hooks = { // TODO: make this an object property, maybe?
 	after_template_activate:[],
 	before_template_deactivate:[],
 	after_template_deactivate:[],
-	// this = the controller that was used ('this' of ELC_filter_controller_listener)
-	after_filters_changed_by_controller:[],
+	// this = the filter that was changed
+	filters_changed_by_controller:[],
 };
 function ELC_addHook(type, callback, params)
 {
@@ -662,6 +662,7 @@ function ELC_filter_controller_listener(e)
 			else
 				this.ELC_filters[i].value = "";
 			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:{no_ELC:1}})); // TODO: Should we check if the element was actually changed by this?
+			ELC_executeHook("filters_changed_by_controller", this.ELC_filters[i]);
 		}
 		if(this.ELC_filters[i].ELC_resetters != null && this.ELC_filters[i].ELC_resetters.indexOf(this) != -1)
 		{
@@ -673,6 +674,7 @@ function ELC_filter_controller_listener(e)
 			else
 				this.ELC_filters[i].value = this.ELC_filters[i].ELC_resetValue;
 			this.ELC_filters[i].dispatchEvent(new CustomEvent("change", {detail:{no_ELC:1}})); // TODO: Should we check if the element was actually changed by this?
+			ELC_executeHook("filters_changed_by_controller", this.ELC_filters[i]);
 		}
 		if(this.ELC_filters[i].ELC_appliers == null || this.ELC_filters[i].ELC_appliers.indexOf(this) != -1)
 		{
@@ -682,7 +684,7 @@ function ELC_filter_controller_listener(e)
 		}
 	}
 	console.log(containers);
-	ELC_executeHook("after_filters_changed_by_controller", this);
+	//ELC_executeHook("filters_changed_by_controller", this);
 	for(var i in containers)
 	{
 		ELC_filter_change_listener.call(containers[i], e);
