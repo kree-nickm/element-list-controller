@@ -552,17 +552,40 @@ function ELC_apply_filter(list_container)
 						and_clause = false;
 						break;
 					}
-					else if(thisfilter.and[t].type == "number" && thisfilter.and[t].value != values.number)
+					else if(thisfilter.and[t].type == "number")
 					{
-						and_clause = false;
-						break;
+						if(thisfilter.and[t].comparison == ">=" && values.number < thisfilter.and[t].value)
+						{
+							and_clause = false;
+							break;
+						}
+						else if(thisfilter.and[t].comparison == "<=" && values.number > thisfilter.and[t].value)
+						{
+							and_clause = false;
+							break;
+						}
+						else if(thisfilter.and[t].comparison == ">" && values.number <= thisfilter.and[t].value)
+						{
+							and_clause = false;
+							break;
+						}
+						else if(thisfilter.and[t].comparison == "<" && values.number >= thisfilter.and[t].value)
+						{
+							and_clause = false;
+							break;
+						}
+						else if((thisfilter.and[t].comparison == "=" || thisfilter.and[t].comparison == "") && values.number != thisfilter.and[t].value)
+						{
+							and_clause = false;
+							break;
+						}
 					}
 					else if(thisfilter.and[t].type == "html" && values.html.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
 					{
 						and_clause = false;
 						break;
 					}
-					else if(values.text.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
+					else if((thisfilter.and[t].type == "text" || thisfilter.and[t].type == "") && values.text.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
 					{
 						and_clause = false;
 						break;
@@ -596,7 +619,7 @@ function ELC_apply_filter(list_container)
 						or_clause = true;
 						break;
 					}
-					else if(values.text.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
+					else if((thisfilter.or[t].type == "text" || thisfilter.or[t].type == "") && values.text.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
 					{
 						or_clause = true;
 						break;
@@ -629,7 +652,7 @@ function ELC_apply_filter(list_container)
 						not_clause = false;
 						break;
 					}
-					else if(values.text.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
+					else if((thisfilter.not[t].type == "text" || thisfilter.not[t].type == "") && values.text.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
 					{
 						not_clause = false;
 						break;
@@ -715,57 +738,58 @@ function ELC_filter_change_listener_step2(e)
 	this.ELC_list_container.ELC_active_filters = {};
 	for(var i = 0; i < this.ELC_list_container.ELC_list_filters.length; i++)
 	{
-		if(this.ELC_list_container.ELC_list_filters[i].value.length == 0)
+		var current_filter = this.ELC_list_container.ELC_list_filters[i];
+		if(current_filter.value.length == 0)
 			continue;
-		var field = this.ELC_list_container.ELC_list_filters[i].ELC_field;
+		var field = current_filter.ELC_field;
 		if(this.ELC_list_container.ELC_active_filters[field] == null)
 			this.ELC_list_container.ELC_active_filters[field] = {};
-		switch(this.ELC_list_container.ELC_list_filters[i].type)
+		switch(current_filter.type)
 		{
 			case "checkbox":
-				if(this.ELC_list_container.ELC_list_filters[i].checked)
+				if(current_filter.checked)
 				{
 					if(this.ELC_list_container.ELC_active_filters[field].or == null)
 						this.ELC_list_container.ELC_active_filters[field].or = {};
-					this.ELC_list_container.ELC_active_filters[field].or[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"text"}; // TODO: user-defined type
+					this.ELC_list_container.ELC_active_filters[field].or[i] = {source:current_filter,value:current_filter.value,type:"text",comparison:current_filter.ELC_filter_comparison}; // TODO: user-defined type
 				}
 				break;
 			case "radio":
-				if(this.ELC_list_container.ELC_list_filters[i].checked)
+				if(current_filter.checked)
 				{
 					if(this.ELC_list_container.ELC_active_filters[field].and == null)
 						this.ELC_list_container.ELC_active_filters[field].and = {};
-					this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"text"}; // TODO: user-defined type
+					this.ELC_list_container.ELC_active_filters[field].and[i] = {source:current_filter,value:current_filter.value,type:"text",comparison:current_filter.ELC_filter_comparison}; // TODO: user-defined type
 				}
 				break;
 			case "number":
 				if(this.ELC_list_container.ELC_active_filters[field].and == null)
 					this.ELC_list_container.ELC_active_filters[field].and = {};
-				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"number"};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:current_filter,value:current_filter.value,type:"number",comparison:current_filter.ELC_filter_comparison};
 				break;
 			case "select-one":
 				if(this.ELC_list_container.ELC_active_filters[field].and == null)
 					this.ELC_list_container.ELC_active_filters[field].and = {};
-				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:this.ELC_list_container.ELC_list_filters[i].value,type:"text"}; // TODO: user-defined type
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:current_filter,value:current_filter.value,type:"text",comparison:current_filter.ELC_filter_comparison}; // TODO: user-defined type
 				break;
 			case "date":
 			case "datetime-local":
 				if(this.ELC_list_container.ELC_active_filters[field].and == null)
 					this.ELC_list_container.ELC_active_filters[field].and = {};
-				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:this.ELC_list_container.ELC_list_filters[i],value:Date.parse(this.ELC_list_container.ELC_list_filters[i].value),type:"date"};
+				this.ELC_list_container.ELC_active_filters[field].and[i] = {source:current_filter,value:Date.parse(current_filter.value),type:"date",comparison:current_filter.ELC_filter_comparison};
 				break;
 			case "select-multiple":
-				var selectedOptions = this.ELC_list_container.ELC_list_filters[i].getSelectedOptions();
+				var selectedOptions = current_filter.getSelectedOptions();
 				for(var k = 0; k < selectedOptions.length; k++)
 					if(selectedOptions[k].value != null && selectedOptions[k].value.length > 0)
 					{
 						if(this.ELC_list_container.ELC_active_filters[field].or == null)
 							this.ELC_list_container.ELC_active_filters[field].or = {};
-						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {source:this.ELC_list_container.ELC_list_filters[i],value:selectedOptions[k].value,type:"text"}; // TODO: user-defined type
+						this.ELC_list_container.ELC_active_filters[field].or[i+"m"+k] = {source:current_filter,value:selectedOptions[k].value,type:"text",comparison:current_filter.ELC_filter_comparison}; // TODO: user-defined type
 					}
 				break;
 			case "text": // TODO: implement quoted text, maybe redo this filter to allow less strict searches
-				var string = this.ELC_list_container.ELC_list_filters[i].value;
+				var string = current_filter.value;
 				if(string)
 				{
 					var strings = string.split(" ");
@@ -775,31 +799,31 @@ function ELC_filter_change_listener_step2(e)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].and == null)
 								this.ELC_list_container.ELC_active_filters[field].and = {};
-							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1),type:"text"};
+							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:current_filter,value:strings[s].substr(1),type:"text",comparison:current_filter.ELC_filter_comparison};
 						}
 						else if(strings[s][0] == "|" && strings[s].length > 1)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].or == null)
 								this.ELC_list_container.ELC_active_filters[field].or = {};
-							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1),type:"text"};
+							this.ELC_list_container.ELC_active_filters[field].or[i+"t"+s] = {source:current_filter,value:strings[s].substr(1),type:"text",comparison:current_filter.ELC_filter_comparison};
 						}
 						else if(strings[s][0] == "-" && strings[s].length > 1)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].not == null)
 								this.ELC_list_container.ELC_active_filters[field].not = {};
-							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s].substr(1),type:"text"};
+							this.ELC_list_container.ELC_active_filters[field].not[i+"t"+s] = {source:current_filter,value:strings[s].substr(1),type:"text",comparison:current_filter.ELC_filter_comparison};
 						}
 						else if(strings[s].length > 0)
 						{
 							if(this.ELC_list_container.ELC_active_filters[field].and == null)
 								this.ELC_list_container.ELC_active_filters[field].and = {};
-							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:this.ELC_list_container.ELC_list_filters[i],value:strings[s],type:"text"};
+							this.ELC_list_container.ELC_active_filters[field].and[i+"t"+s] = {source:current_filter,value:strings[s],type:"text",comparison:current_filter.ELC_filter_comparison};
 						}
 					}
 				}
 				break;
 			default:
-				console.warn("No filter processing available for element of type: "+ this.ELC_list_container.ELC_list_filters[i].type);
+				console.warn("No filter processing available for element of type: "+ current_filter.type);
 		}
 	}
 	// TODO: save the created elements and don't recreate them if they haven't changed
@@ -1077,6 +1101,25 @@ function ELC_initialize(event)
 				filters[i].ELC_field = filters[i].dataset.field;
 			else
 				filters[i].ELC_field = "";
+			switch(filters[i].dataset.comparison)
+			{
+				case ">=":
+				case "=>":
+					filters[i].ELC_filter_comparison = ">=";
+					break;
+				case "<=":
+				case "=<":
+					filters[i].ELC_filter_comparison = "<=";
+					break;
+				case ">":
+					filters[i].ELC_filter_comparison = ">";
+					break;
+				case "<":
+					filters[i].ELC_filter_comparison = "<";
+					break;
+				default:
+					filters[i].ELC_filter_comparison = "";
+			}
 			if(filters[i].dataset.applyControl != null)
 			{
 				if(filters[i].dataset.applyControl[0] == ".")
