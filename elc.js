@@ -165,6 +165,8 @@ function ELC_activateTemplate(template_id)
 			{
 				for(var i in ELC_listDataModels[template_id].data)
 				{
+					if(ELC_listDataModels[template_id].data[i] == null)
+						continue;
 					temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
 					temp.content.firstChild.id = template_id +"_"+ i;
 					ELC_listDataModels[template_id].parent.insertBefore(temp.content.firstChild, ELC_listDataModels[template_id].nextSibling);
@@ -185,6 +187,8 @@ function ELC_activateTemplate(template_id)
 				{
 					for(var i in ELC_listDataModels[template_id].data)
 					{
+						if(ELC_listDataModels[template_id].data[i] == null)
+							continue;
 						temp.innerHTML = ELC_listDataModels[template_id].template.outerHTML.replace(/\{\{(\w+)}}/g, function(m,v){return ELC_listDataModels[template_id].data[i][v];}).trim();
 						temp.firstChild.id = template_id +"_"+ i;
 						ELC_listDataModels[template_id].parent.insertBefore(temp.firstChild, ELC_listDataModels[template_id].nextSibling);
@@ -213,6 +217,8 @@ function ELC_deactivateTemplate(template_id)
 			ELC_executeHook("before_template_deactivate", ELC_listDataModels[template_id]);
 			for(var i in ELC_listDataModels[template_id].data)
 			{
+				if(ELC_listDataModels[template_id].data[i] == null)
+					continue;
 				var id = template_id +"_"+ i;
 				ELC_listDataModels[template_id].parent.removeChild(document.getElementById(id));
 			}
