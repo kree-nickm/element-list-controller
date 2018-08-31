@@ -126,6 +126,21 @@ function ELC_setData(template_id, data, auto, ajax)
 				console.error("Invalid data model specified in ELC_setData: "+ String(data) +"; must be an array.");
 			}
 		}
+		else if(ELC_listDataModels[template_id] != null)
+		{
+			if(typeof data == "object")
+			{
+				ELC_listDataModels[template_id].data = data;
+				if(auto)
+				{
+					if(ELC_listDataModels[template_id].parent.ELC_activeTemplate != null)
+						ELC_deactivateTemplate(template_id);
+					ELC_activateTemplate(template_id);
+				}
+			}
+			else
+				console.error("Invalid data model specified in ELC_setData: "+ String(data) +"; must be an array. Note: The template has also already been loaded previously.");
+		}
 		else
 			console.error("Invalid template id specified in ELC_setData: "+ template_id);
 	}
