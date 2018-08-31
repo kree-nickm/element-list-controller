@@ -130,13 +130,14 @@ function ELC_setData(template_id, data, auto, ajax)
 		{
 			if(typeof data == "object")
 			{
+				if(ELC_listDataModels[template_id].parent.ELC_activeTemplate == template_id)
+				{
+					ELC_deactivateTemplate(template_id);
+					auto = true;
+				}
 				ELC_listDataModels[template_id].data = data;
 				if(auto)
-				{
-					if(ELC_listDataModels[template_id].parent.ELC_activeTemplate != null)
-						ELC_deactivateTemplate(template_id);
 					ELC_activateTemplate(template_id);
-				}
 			}
 			else
 				console.error("Invalid data model specified in ELC_setData: "+ String(data) +"; must be an array. Note: The template has also already been loaded previously.");
