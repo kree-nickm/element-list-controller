@@ -576,41 +576,78 @@ function ELC_apply_filter(list_container)
 					}
 					else if(thisfilter.and[t].type == "number")
 					{
-						if(thisfilter.and[t].comparison == ">=" && values.number < thisfilter.and[t].value)
+						if(thisfilter.and[t].comparison == ">=")
 						{
-							and_clause = false;
-							break;
+							if(values.number < thisfilter.and[t].value)
+							{
+								and_clause = false;
+								break;
+							}
 						}
-						else if(thisfilter.and[t].comparison == "<=" && values.number > thisfilter.and[t].value)
+						else if(thisfilter.and[t].comparison == "<=")
 						{
-							and_clause = false;
-							break;
+							if(values.number > thisfilter.and[t].value)
+							{
+								and_clause = false;
+								break;
+							}
 						}
-						else if(thisfilter.and[t].comparison == ">" && values.number <= thisfilter.and[t].value)
+						else if(thisfilter.and[t].comparison == ">")
 						{
-							and_clause = false;
-							break;
+							if(values.number <= thisfilter.and[t].value)
+							{
+								and_clause = false;
+								break;
+							}
 						}
-						else if(thisfilter.and[t].comparison == "<" && values.number >= thisfilter.and[t].value)
+						else if(thisfilter.and[t].comparison == "<")
 						{
-							and_clause = false;
-							break;
+							if(values.number >= thisfilter.and[t].value)
+							{
+								and_clause = false;
+								break;
+							}
 						}
-						else if((thisfilter.and[t].comparison == "=" || thisfilter.and[t].comparison == "") && values.number != thisfilter.and[t].value)
+						// Default is =
+						else if(values.number != thisfilter.and[t].value)
 						{
 							and_clause = false;
 							break;
 						}
 					}
-					else if(thisfilter.and[t].type == "html" && values.html.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
+					else if(thisfilter.and[t].type == "html")
 					{
-						and_clause = false;
-						break;
+						if(thisfilter.and[t].comparison == "=")
+						{
+							if(values.html != thisfilter.and[t].value.toLowerCase())
+							{
+								and_clause = false;
+								break;
+							}
+						}
+						// Default is *=
+						else if(values.html.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
+						{
+							and_clause = false;
+							break;
+						}
 					}
-					else if((thisfilter.and[t].type == "text" || thisfilter.and[t].type == "") && values.text.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
+					else if(thisfilter.and[t].type == "text" || thisfilter.and[t].type == "")
 					{
-						and_clause = false;
-						break;
+						if(thisfilter.and[t].comparison == "=")
+						{
+							if(values.text != thisfilter.and[t].value.toLowerCase())
+							{
+								and_clause = false;
+								break;
+							}
+						}
+						// Default is *=
+						else if(values.text.indexOf(thisfilter.and[t].value.toLowerCase()) == -1)
+						{
+							and_clause = false;
+							break;
+						}
 					}
 				}
 			}
@@ -636,15 +673,39 @@ function ELC_apply_filter(list_container)
 						or_clause = true;
 						break;
 					}
-					else if(thisfilter.or[t].type == "html" && values.html.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
+					else if(thisfilter.or[t].type == "html")
 					{
-						or_clause = true;
-						break;
+						if(thisfilter.or[t].comparison == "=")
+						{
+							if(values.html == thisfilter.or[t].value.toLowerCase())
+							{
+								or_clause = true;
+								break;
+							}
+						}
+						// Default is *=
+						else if(values.html.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
+						{
+							or_clause = true;
+							break;
+						}
 					}
-					else if((thisfilter.or[t].type == "text" || thisfilter.or[t].type == "") && values.text.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
+					else if(thisfilter.or[t].type == "text" || thisfilter.or[t].type == "")
 					{
-						or_clause = true;
-						break;
+						if(thisfilter.or[t].comparison == "=")
+						{
+							if(values.text == thisfilter.or[t].value.toLowerCase())
+							{
+								or_clause = true;
+								break;
+							}
+						}
+						// Default is *=
+						else if(values.text.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
+						{
+							or_clause = true;
+							break;
+						}
 					}
 				}
 			}
@@ -669,15 +730,39 @@ function ELC_apply_filter(list_container)
 						not_clause = false;
 						break;
 					}
-					else if(thisfilter.not[t].type == "html" && values.html.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
+					else if(thisfilter.not[t].type == "html")
 					{
-						not_clause = false;
-						break;
+						if(thisfilter.not[t].comparison == "=")
+						{
+							if(values.html == thisfilter.not[t].value.toLowerCase())
+							{
+								not_clause = false;
+								break;
+							}
+						}
+						// Default is *=
+						else if(values.html.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
+						{
+							not_clause = false;
+							break;
+						}
 					}
-					else if((thisfilter.not[t].type == "text" || thisfilter.not[t].type == "") && values.text.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
+					else if(thisfilter.not[t].type == "text" || thisfilter.not[t].type == "")
 					{
-						not_clause = false;
-						break;
+						if(thisfilter.not[t].comparison == "=")
+						{
+							if(values.text == thisfilter.not[t].value.toLowerCase())
+							{
+								not_clause = false;
+								break;
+							}
+						}
+						// Default is *=
+						else if(values.text.indexOf(thisfilter.not[t].value.toLowerCase()) != -1)
+						{
+							not_clause = false;
+							break;
+						}
 					}
 				}
 			}
@@ -1138,6 +1223,13 @@ function ELC_initialize(event)
 					break;
 				case "<":
 					filters[i].ELC_filter_comparison = "<";
+					break;
+				case "==":
+				case "=":
+					filters[i].ELC_filter_comparison = "=";
+					break;
+				case "*=":
+					filters[i].ELC_filter_comparison = "*=";
 					break;
 				default:
 					filters[i].ELC_filter_comparison = "";
