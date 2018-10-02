@@ -700,6 +700,15 @@ function ELC_apply_filter(list_container)
 								break;
 							}
 						}
+						else if(thisfilter.or[t].comparison == "~=")
+						{
+							//thisfilter.or[t].value.toLowerCase()
+							if(values.text.match(new RegExp("\\b"+ thisfilter.or[t].value.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') +"\\b")))
+							{
+								or_clause = true;
+								break;
+							}
+						}
 						// Default is *=
 						else if(values.text.indexOf(thisfilter.or[t].value.toLowerCase()) != -1)
 						{
@@ -1230,6 +1239,9 @@ function ELC_initialize(event)
 					break;
 				case "*=":
 					filters[i].ELC_filter_comparison = "*=";
+					break;
+				case "~=":
+					filters[i].ELC_filter_comparison = "~=";
 					break;
 				default:
 					filters[i].ELC_filter_comparison = "";
